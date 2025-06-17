@@ -10,13 +10,13 @@ readme = "README.md"
 requires-python = ">=3.8"
 
 [project.urls]
-Homepage = "https://github.com/briday1/simpledash"
-Repository = "https://github.com/briday1/simpledash"
+Homepage = "https://github.com/briday1/staticdash"
+Repository = "https://github.com/briday1/staticdash"
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["simpledash*"]
+include = ["staticdash*"]
 exclude = ["output*"]
