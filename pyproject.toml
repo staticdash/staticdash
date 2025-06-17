@@ -1,30 +1,18 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "simpledash"
 version = "0.1.0"
-description = "A lightweight static HTML dashboard generator with Plotly, Pandas, and images"
+description = "A minimal static dashboard generator with Plotly support"
 authors = [
-    { name = "Your Name", email = "your.email@example.com" }
+  { name = "Brian Day", email = "brian.day1@gmail.com" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.8"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent"
-]
-dependencies = [
-    "pandas",
-    "plotly",
-    "dominate"
-]
 
-[tool.setuptools.packages.find]
-where = ["simpledash"]
+[project.urls]
+Homepage = "https://github.com/briday1/simpledash"
+Repository = "https://github.com/briday1/simpledash"
 
-[tool.setuptools.package-data]
-simpledash = ["assets/css/style.css"]
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
