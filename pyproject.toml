@@ -1,22 +1,29 @@
-[project]
-name = "staticdash"
-version = "0.1.0"
-description = "A minimal static dashboard generator with Plotly support"
-authors = [
-  { name = "Brian Day", email = "brian.day1@gmail.com" }
-]
-license = "MIT"
-readme = "README.md"
-requires-python = ">=3.8"
-
-[project.urls]
-Homepage = "https://github.com/briday1/staticdash"
-Repository = "https://github.com/briday1/staticdash"
-
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-include = ["staticdash*"]
-exclude = ["output*"]
+[project]
+name = "staticdash"
+version = "0.1.0"
+description = "A lightweight static HTML dashboard generator with Plotly and pandas support."
+authors = [
+    { name = "Brian Day", email = "brian.day1@gmail.com" }
+]
+license = { text = "CC0-1.0" }
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "plotly",
+    "pandas",
+    "dominate"
+]
+
+[tool.setuptools]
+packages = ["staticdash"]
+
+[tool.setuptools.package-data]
+staticdash = ["assets/css/*.css", "assets/js/*.js"]
+
+[project.urls]
+Homepage = "https://github.com/briday1/staticdash"
+Repository = "https://github.com/briday1/staticdash"

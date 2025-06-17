@@ -1,46 +1,46 @@
-from simpledash.dashboard import Dashboard, Page
-import plotly.graph_objects as go
+from staticdash.dashboard import Dashboard, Page
+import plotly.express as px
 import pandas as pd
+import numpy as np
 
-# Create the dashboard
-dashboard = Dashboard(title="SimpleDash Demo")
+# Create sample data
+df = pd.DataFrame({
+    "Category": ["A", "B", "C", "D"],
+    "Value": [10, 20, 30, 40]
+})
+
+df2 = pd.DataFrame({
+    "Time": pd.date_range("2024-01-01", periods=10, freq="D"),
+    "Signal": np.random.randn(10).cumsum()
+})
+
+fig1 = px.bar(df, x="Category", y="Value", title="Bar Chart Example")
+fig2 = px.line(df2, x="Time", y="Signal", title="Signal over Time")
+
+# Build dashboard
+dashboard = Dashboard(title="StaticDash Demo")
 
 # Page 1: Overview
 page1 = Page("overview", "Overview")
+page1.add("Welcome to the StaticDash demo. Below is a bar chart and a table.")
+page1.add(fig1)
+page1.add(df)
 
-# Add plot
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=[1, 2, 3], y=[4, 1, 6], mode='lines+markers', name="Demo Line"))
-fig.update_layout(title="Sample Plot")
-page1.append(fig)
+# Page 2: Timeseries
+page2 = Page("timeseries", "Timeseries")
+page2.add("Here is a random time series with cumulative noise.")
+page2.add(fig2)
+page2.add(df2)
 
-# Add table
-df1 = pd.DataFrame({
-    "Category": ["A", "B", "C"],
-    "Value": [100, 200, 150]
-})
-page1.append(df1)
+# Page 3: Summary
+page3 = Page("summary", "Summary")
+page3.add("Summary and notes can be added here.")
+page3.add("StaticDash is a lightweight static dashboard generator.")
 
-# Add extra text
-page1.append("This page includes a sample plot, table, and descriptive text.")
+# Register pages
 dashboard.add_page(page1)
-
-# Page 2: Data Table
-page2 = Page("data", "Data")
-df2 = pd.DataFrame({
-    "Name": ["Alice", "Bob", "Charlie"],
-    "Score": [85, 92, 78],
-    "Passed": [True, True, False]
-})
-page2.append("This table shows individual scores and pass/fail status.")
-page2.append(df2)
 dashboard.add_page(page2)
-
-# Page 3: Notes
-page3 = Page("notes", "Notes")
-page3.append("These are concluding notes about the dataset.")
-page3.append("You can also add multiple text blocks like this.")
 dashboard.add_page(page3)
 
-# Publish the dashboard
+# Export
 dashboard.publish(output_dir="output")
