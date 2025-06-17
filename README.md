@@ -1,14 +1,14 @@
-# simpledash
+# staticdash 
 
-simpledash is a lightweight Python module for creating static, multi-page HTML dashboards. It supports Plotly plots, tables, and text content, with a fixed sidebar for navigation.
+staticdash is a lightweight Python module for creating static, multi-page HTML dashboards. It supports Plotly plots, tables, and text content, with a fixed sidebar for navigation.
 
 ## Installation
 
 Clone the repository and install it in editable mode:
 
 ```bash
-git clone https://github.com/briday1/simpledash.git 
-cd simpledash
+git clone https://github.com/briday1/staticdash.git 
+cd staticdash
 pip install .
 ```
 
@@ -17,12 +17,12 @@ pip install .
 Create a Python script like this:
 
 ```python
-from simpledash.dashboard import Dashboard, Page
+from staticdash.dashboard import Dashboard, Page
 import plotly.graph_objects as go
 import pandas as pd
 
 # Create the dashboard
-dashboard = Dashboard(title="SimpleDash Demo")
+dashboard = Dashboard(title="StaticDash Demo")
 
 # Page 1: Overview
 page1 = Page("overview", "Overview")
