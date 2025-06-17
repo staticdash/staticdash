@@ -1,5 +1,5 @@
 [project]
-name = "simpledash"
+name = "staticdash"
 version = "0.1.0"
 description = "A minimal static dashboard generator with Plotly support"
 authors = [
@@ -16,3 +16,7 @@ Repository = "https://github.com/briday1/simpledash"
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["simpledash*"]
+exclude = ["output*"]
