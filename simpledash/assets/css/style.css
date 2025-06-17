@@ -1,0 +1,52 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  #sidebar {
+    width: 220px;
+    background: #2c3e50;
+    color: white;
+    padding: 20px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+  
+  #sidebar h1 {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+  
+  .nav-link {
+    color: white;
+    display: block;
+    text-decoration: none;
+    margin: 10px 0;
+    padding: 8px;
+    border-radius: 4px;
+  }
+  
+  .nav-link:hover,
+  .nav-link.active {
+    background: #34495e;
+  }
+  
+  #content {
+    flex-grow: 1;
+    padding: 30px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    max-width: calc(100vw - 220px);
+  }
+  
+  .page-section {
+    display: none;
+  }
+  
+  .plotly-graph-div {
+    max-width: 100%;
+    overflow-x: auto;
+  }
