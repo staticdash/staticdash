@@ -26,6 +26,11 @@ class Page:
             table_id = f"table-{len(self.elements)}"
         html = df.to_html(classes="table-hover table-striped", index=False, border=0, table_id=table_id)
         self.elements.append(("table", (html, table_id)))
+    
+    def add_download(self, file_path, label=None):
+        if not os.path.isfile(file_path):
+            raise FileNotFoundError(f"File not found: {file_path}")
+        self.elements.append(("download", (file_path, label)))
 
     def add(self, element):
         if isinstance(element, str):
@@ -59,14 +64,17 @@ class Dashboard:
         self.pages.append(page)
 
     def publish(self, output_dir="output"):
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir = os.path.abspath(output_dir)
         pages_dir = os.path.join(output_dir, "pages")
-        os.makedirs(pages_dir, exist_ok=True)
-
-        # Copy assets
+        downloads_dir = os.path.join(output_dir, "downloads")
         assets_src = os.path.join(os.path.dirname(__file__), "assets")
         assets_dst = os.path.join(output_dir, "assets")
+
+        # Ensure directories exist
+        os.makedirs(pages_dir, exist_ok=True)
+        os.makedirs(downloads_dir, exist_ok=True)
         shutil.copytree(assets_src, assets_dst, dirs_exist_ok=True)
+
 
         # Generate each page
         for page in self.pages:
@@ -113,6 +121,15 @@ class Dashboard:
                             elif kind == "table":
                                 table_html, _ = content
                                 div(raw_util(table_html))
+                            elif kind == "download":
+                                src_path, label = content
+                                file_uuid = f"{uuid.uuid4().hex}_{os.path.basename(src_path)}"
+                                dst_path = os.path.join(downloads_dir, file_uuid)
+                                shutil.copy2(src_path, dst_path)
+                                a(label or os.path.basename(src_path),
+                                href=f"{downloads_dir}/{file_uuid}",
+                                cls="download-button",
+                                download=True)
 
 
         with open(os.path.join(output_dir, "index.html"), "w") as f:
