@@ -40,7 +40,8 @@ page3.add("StaticDash is a lightweight static dashboard generator.")
 # Page 4: Download
 page4 = Page("download", "Download")
 page4.add("Here is a button to download a file.")
-page4.add_download('./test_file.txt', "Download")
+page4.add_download('./test_file.txt', "Download File")
+page4.add_download('./test_file2.txt', "Download Another File")
 
 # Register pages
 dashboard.add_page(page1)

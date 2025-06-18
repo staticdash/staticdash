@@ -121,15 +121,33 @@ class Dashboard:
                             elif kind == "table":
                                 table_html, _ = content
                                 div(raw_util(table_html))
+                            # elif kind == "download":
+                            #     src_path, label = content
+                            #     file_uuid = f"{uuid.uuid4().hex}_{os.path.basename(src_path)}"
+                            #     dst_path = os.path.join(downloads_dir, file_uuid)
+                            #     shutil.copy2(src_path, dst_path)
+                            #     a(label or os.path.basename(src_path),
+                            #     href=f"{downloads_dir}/{file_uuid}",
+                            #     cls="download-button",
+                            #     download=True)
                             elif kind == "download":
                                 src_path, label = content
                                 file_uuid = f"{uuid.uuid4().hex}_{os.path.basename(src_path)}"
                                 dst_path = os.path.join(downloads_dir, file_uuid)
                                 shutil.copy2(src_path, dst_path)
-                                a(label or os.path.basename(src_path),
-                                href=f"{downloads_dir}/{file_uuid}",
-                                cls="download-button",
-                                download=True)
+
+                                # Use relative link from HTML to downloads/ folder
+                                download_link = f"downloads/{file_uuid}"
+
+                                # Create button and append it to the current div
+                                btn = a(label or os.path.basename(src_path),
+                                        href=download_link,
+                                        cls="download-button",
+                                        download=True)
+
+                                div(btn)
+                                div(raw_util("<br>"))
+
 
 
         with open(os.path.join(output_dir, "index.html"), "w") as f:
