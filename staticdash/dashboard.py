@@ -18,7 +18,7 @@ class Page:
         self.elements.append(("text", text))
 
     def add_plot(self, plot):
-        html = raw_util(plot.to_html(full_html=False, include_plotlyjs='cdn'))
+        html = raw_util(plot.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True}))
         self.elements.append(("plot", html))
 
     def add_table(self, df, table_id=None):

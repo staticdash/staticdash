@@ -88,3 +88,13 @@ tr:hover {
   height: auto;
   margin: 1em 0;
 }
+
+
+.plot-container {
+  width: 100%;
+}
+
+.plot-container .plotly-graph-div {
+  width: 100% !important;
+  height: auto !important;
+}
