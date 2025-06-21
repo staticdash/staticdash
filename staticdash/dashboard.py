@@ -4,15 +4,12 @@ import uuid
 import pandas as pd
 import plotly.graph_objects as go
 from dominate import document
-from dominate.tags import div, h1, h2, h3, h4, p, a, script, link, table, thead, tr, th, tbody, td, span
+from dominate.tags import div, h1, h2, h3, h4, p, a, script, link
 from dominate.util import raw as raw_util
 
-class Page:
-    def __init__(self, slug, title):
-        self.slug = slug
-        self.title = title
+class AbstractPage:
+    def __init__(self):
         self.elements = []
-        self.add_header(title, level=1)  # Add page title as level 1 header
 
     def add_header(self, text, level=1):
         if level not in (1, 2, 3, 4):
@@ -40,20 +37,25 @@ class Page:
             raise FileNotFoundError(f"File not found: {file_path}")
         self.elements.append(("download", (file_path, label)))
 
-    def add(self, element):
-        if isinstance(element, str):
-            self.add_text(element)
-        elif isinstance(element, go.Figure):
-            self.add_plot(element)
-        elif isinstance(element, pd.DataFrame):
-            self.add_table(element)
-        else:
-            raise ValueError(f"Unsupported element type: {type(element)}")
+    def add_minipage(self, minipage):
+        self.elements.append(("minipage", minipage))
+
+class Page(AbstractPage):
+    def __init__(self, slug, title):
+        super().__init__()
+        self.slug = slug
+        self.title = title
+        self.add_header(title, level=1)
 
     def render(self, index):
-        section = div(id=f"page-{index}", cls="page-section")
+        section = div()
+        minipage_row = []
         for kind, content in self.elements:
-            if kind == "header":
+            if kind == "minipage":
+                row_div = div(cls="minipage-row")
+                row_div += content.render(index)
+                section += row_div
+            elif kind == "header":
                 text, level = content
                 if level == 1:
                     section += h1(text)
@@ -70,7 +72,64 @@ class Page:
             elif kind == "table":
                 table_html, _ = content
                 section += raw_util(table_html)
+            elif kind == "download":
+                file_path, label = content
+                btn = a(label or os.path.basename(file_path),
+                        href=file_path,
+                        cls="download-button",
+                        download=True)
+                section += div(btn)
         return section
+
+class MiniPage(AbstractPage):
+    def __init__(self, width=1.0):
+        super().__init__()
+        self.width = width
+
+    def render(self, index=None):
+        style = f"flex: 0 0 {self.width * 100}%; max-width: {self.width * 100}%;"
+        container = div(cls="minipage", style=style)
+        minipage_row = []
+        for kind, content in self.elements:
+            if kind == "minipage":
+                minipage_row.append(content)
+            else:
+                if minipage_row:
+                    row_div = div(cls="minipage-row")
+                    for mp in minipage_row:
+                        row_div += mp.render(index)
+                    container += row_div
+                    minipage_row = []
+                if kind == "header":
+                    text, level = content
+                    if level == 1:
+                        container += h1(text)
+                    elif level == 2:
+                        container += h2(text)
+                    elif level == 3:
+                        container += h3(text)
+                    elif level == 4:
+                        container += h4(text)
+                elif kind == "text":
+                    container += p(content)
+                elif kind == "plot":
+                    container += div(content, cls="plot-container")
+                elif kind == "table":
+                    table_html, _ = content
+                    container += raw_util(table_html)
+                elif kind == "download":
+                    file_path, label = content
+                    btn = a(label or os.path.basename(file_path),
+                            href=file_path,
+                            cls="download-button",
+                            download=True)
+                    container += div(btn)
+        if minipage_row:
+            row_div = div(cls="minipage-row")
+            for mp in minipage_row:
+                row_div += mp.render(index)
+            container += row_div
+        return container
 
 class Dashboard:
     def __init__(self, title="Dashboard"):
@@ -99,7 +158,6 @@ class Dashboard:
 
             with doc:
                 with div(cls="page-section", id=f"page-{page.slug}"):
-                    # Remove h1(page.title) here, since it's already a header element
                     for kind, content in page.elements:
                         if kind == "header":
                             text, level = content
@@ -136,39 +194,10 @@ class Dashboard:
                     a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
 
             with div(id="content"):
-                for page in self.pages:
-                    with div(id=f"page-{page.slug}", cls="page-section", style="display:none;"):
-                        # Remove h2(page.title) here, since it's already a header element
-                        for kind, content in page.elements:
-                            if kind == "header":
-                                text, level = content
-                                if level == 1:
-                                    h1(text)
-                                elif level == 2:
-                                    h2(text)
-                                elif level == 3:
-                                    h3(text)
-                                elif level == 4:
-                                    h4(text)
-                            elif kind == "text":
-                                p(content)
-                            elif kind == "plot":
-                                div(content, cls="plot-container")
-                            elif kind == "table":
-                                table_html, _ = content
-                                div(raw_util(table_html))
-                            elif kind == "download":
-                                src_path, label = content
-                                file_uuid = f"{uuid.uuid4().hex}_{os.path.basename(src_path)}"
-                                dst_path = os.path.join(downloads_dir, file_uuid)
-                                shutil.copy2(src_path, dst_path)
-                                download_link = f"downloads/{file_uuid}"
-                                btn = a(label or os.path.basename(src_path),
-                                        href=download_link,
-                                        cls="download-button",
-                                        download=True)
-                                div(btn)
-                                div(raw_util("<br>"))
+                for idx, page in enumerate(self.pages):
+                    with div(id=f"page-{page.slug}", cls="page-section", style="display:none;") as section:
+                        rendered = page.render(idx)
+                        section += rendered  # This is correct
 
         with open(os.path.join(output_dir, "index.html"), "w") as f:
             f.write(str(index_doc))

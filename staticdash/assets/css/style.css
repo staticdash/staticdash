@@ -175,3 +175,14 @@ table.sortable th.sorted-asc::after {
 table.sortable th.sorted-desc::after {
   content: "\25BC";
 }
+
+.minipage-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.minipage {
+  box-sizing: border-box;
+  padding: 10px;
+}
