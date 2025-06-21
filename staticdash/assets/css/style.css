@@ -101,7 +101,11 @@ body {
 
 .plot-container .plotly-graph-div {
   width: 100% !important;
-  height: auto !important;
+  min-width: 300px;
+  max-width: 100%;
+  height: 400px; /* or whatever default you want */
+  min-height: 300px;
+  box-sizing: border-box;
 }
 
 table {
