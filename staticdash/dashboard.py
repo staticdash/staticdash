@@ -4,7 +4,7 @@ import uuid
 import pandas as pd
 import plotly.graph_objects as go
 from dominate import document
-from dominate.tags import div, h1, h2, p, a, script, link, table, thead, tr, th, tbody, td, span
+from dominate.tags import div, h1, h2, h3, h4, p, a, script, link, table, thead, tr, th, tbody, td, span
 from dominate.util import raw as raw_util
 
 class Page:
@@ -12,6 +12,12 @@ class Page:
         self.slug = slug
         self.title = title
         self.elements = []
+        self.add_header(title, level=1)  # Add page title as level 1 header
+
+    def add_header(self, text, level=1):
+        if level not in (1, 2, 3, 4):
+            raise ValueError("Header level must be 1, 2, 3, or 4")
+        self.elements.append(("header", (text, level)))
 
     def add_text(self, text):
         self.elements.append(("text", text))
@@ -43,9 +49,18 @@ class Page:
 
     def render(self, index):
         section = div(id=f"page-{index}", cls="page-section")
-        section += h1(self.title)
         for kind, content in self.elements:
-            if kind == "text":
+            if kind == "header":
+                text, level = content
+                if level == 1:
+                    section += h1(text)
+                elif level == 2:
+                    section += h2(text)
+                elif level == 3:
+                    section += h3(text)
+                elif level == 4:
+                    section += h4(text)
+            elif kind == "text":
                 section += p(content)
             elif kind == "plot":
                 section += div(content, cls="plot-container")
@@ -81,9 +96,19 @@ class Dashboard:
 
             with doc:
                 with div(cls="page-section", id=f"page-{page.slug}"):
-                    h1(page.title)
+                    # Remove h1(page.title) here, since it's already a header element
                     for kind, content in page.elements:
-                        if kind == "text":
+                        if kind == "header":
+                            text, level = content
+                            if level == 1:
+                                h1(text)
+                            elif level == 2:
+                                h2(text)
+                            elif level == 3:
+                                h3(text)
+                            elif level == 4:
+                                h4(text)
+                        elif kind == "text":
                             p(content)
                         elif kind == "plot":
                             div(content, cls="plot-container")
@@ -110,9 +135,19 @@ class Dashboard:
             with div(id="content"):
                 for page in self.pages:
                     with div(id=f"page-{page.slug}", cls="page-section", style="display:none;"):
-                        h2(page.title)
+                        # Remove h2(page.title) here, since it's already a header element
                         for kind, content in page.elements:
-                            if kind == "text":
+                            if kind == "header":
+                                text, level = content
+                                if level == 1:
+                                    h1(text)
+                                elif level == 2:
+                                    h2(text)
+                                elif level == 3:
+                                    h3(text)
+                                elif level == 4:
+                                    h4(text)
+                            elif kind == "text":
                                 p(content)
                             elif kind == "plot":
                                 div(content, cls="plot-container")

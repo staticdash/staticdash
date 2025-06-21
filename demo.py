@@ -22,23 +22,32 @@ dashboard = Dashboard(title="StaticDash Demo")
 
 # Page 1: Overview
 page1 = Page("overview", "Overview")
+page1.add_header("Section 1: Introduction", level=2)
 page1.add("Welcome to the StaticDash demo. Below is a bar chart and a table.")
+page1.add_header("Section 2: Bar Chart", level=3)
 page1.add(fig1)
+page1.add_header("Section 3: Data Table", level=3)
 page1.add(df)
 
 # Page 2: Timeseries
 page2 = Page("timeseries", "Timeseries")
+page2.add_header("Random Time Series", level=2)
 page2.add("Here is a random time series with cumulative noise.")
+page2.add_header("Line Chart", level=3)
 page2.add(fig2)
+page2.add_header("Raw Data", level=3)
 page2.add(df2)
 
 # Page 3: Summary
 page3 = Page("summary", "Summary")
+page3.add_header("Summary", level=2)
 page3.add("Summary and notes can be added here.")
+page3.add_header("About StaticDash", level=3)
 page3.add("StaticDash is a lightweight static dashboard generator.")
 
 # Page 4: Download
 page4 = Page("download", "Download")
+page4.add_header("Download Files", level=2)
 page4.add("Here is a button to download a file.")
 page4.add_download('./test_file.txt', "Download File")
 page4.add_download('./test_file2.txt', "Download Another File")
