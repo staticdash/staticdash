@@ -40,4 +40,55 @@ document.addEventListener("DOMContentLoaded", () => {
   if (sections.length > 0) {
     showPage(sections[0].id);
   }
+
+  // Table sorting for tables with class "sortable"
+  document.querySelectorAll("table.sortable").forEach(function (table) {
+    const headers = table.querySelectorAll("thead th");
+    let originalRows = null;
+
+    headers.forEach(function (th, colIdx) {
+      th.addEventListener("click", function () {
+        if (!originalRows) {
+          const tbody = table.querySelector("tbody");
+          originalRows = Array.from(tbody.querySelectorAll("tr"));
+        }
+
+        // Cycle: none -> asc -> desc -> none
+        let state = th.dataset.sorted;
+        let nextState = state === "asc" ? "desc" : state === "desc" ? "none" : "asc";
+
+        headers.forEach(h => {
+          h.classList.remove("sorted-asc", "sorted-desc");
+          h.dataset.sorted = "none";
+        });
+
+        th.dataset.sorted = nextState;
+        if (nextState === "asc") th.classList.add("sorted-asc");
+        if (nextState === "desc") th.classList.add("sorted-desc");
+
+        const tbody = table.querySelector("tbody");
+        if (nextState === "none") {
+          originalRows.forEach(row => tbody.appendChild(row));
+          return;
+        }
+
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        rows.sort(function (a, b) {
+          const aText = a.children[colIdx].textContent.trim();
+          const bText = b.children[colIdx].textContent.trim();
+          // Numeric sort if both are numbers
+          const aNum = parseFloat(aText);
+          const bNum = parseFloat(bText);
+          if (!isNaN(aNum) && !isNaN(bNum)) {
+            return nextState === "asc" ? aNum - bNum : bNum - aNum;
+          }
+          // String sort (works for ISO dates)
+          return nextState === "asc"
+            ? aText.localeCompare(bText)
+            : bText.localeCompare(aText);
+        });
+        rows.forEach(row => tbody.appendChild(row));
+      });
+    });
+  });
 });

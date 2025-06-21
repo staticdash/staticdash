@@ -14,6 +14,9 @@ df2 = pd.DataFrame({
     "Signal": np.random.randn(10).cumsum()
 })
 
+# Ensure Time column is string for sorting
+df2["Time"] = df2["Time"].dt.strftime("%Y-%m-%d %H:%M:%S")
+
 fig1 = px.bar(df, x="Category", y="Value", title="Bar Chart Example")
 fig2 = px.line(df2, x="Time", y="Signal", title="Signal over Time")
 

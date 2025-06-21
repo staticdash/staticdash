@@ -26,10 +26,13 @@ class Page:
         html = raw_util(plot.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True}))
         self.elements.append(("plot", html))
 
-    def add_table(self, df, table_id=None):
+    def add_table(self, df, table_id=None, sortable=True):
         if table_id is None:
             table_id = f"table-{len(self.elements)}"
-        html = df.to_html(classes="table-hover table-striped", index=False, border=0, table_id=table_id)
+        classes = "table-hover table-striped"
+        if sortable:
+            classes += " sortable"
+        html = df.to_html(classes=classes, index=False, border=0, table_id=table_id, escape=False)
         self.elements.append(("table", (html, table_id)))
 
     def add_download(self, file_path, label=None):
