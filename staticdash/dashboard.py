@@ -155,6 +155,7 @@ class Dashboard:
             with doc.head:
                 doc.head.add(link(rel="stylesheet", href="../assets/css/style.css"))
                 doc.head.add(script(type="text/javascript", src="../assets/js/script.js"))
+                doc.head.add(script(src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"))
 
             with doc:
                 with div(cls="page-section", id=f"page-{page.slug}"):
@@ -184,6 +185,7 @@ class Dashboard:
         with index_doc.head:
             index_doc.head.add(link(rel="stylesheet", href="assets/css/style.css"))
             index_doc.head.add(script(type="text/javascript", src="assets/js/script.js"))
+            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"))
 
         with index_doc:
             with div(id="sidebar"):
