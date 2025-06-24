@@ -86,9 +86,7 @@ class Page(AbstractPage):
                 toolbar += a("Copy", href="#", cls="copy-btn", **{"data-target": code_id})
                 toolbar += a("View Raw", href="#", cls="view-raw-btn", **{"data-target": code_id, "style": "margin-left:10px;"})
                 escaped_code = html.escape(code)
-                header_text = f"{language.capitalize()} Example"
                 block_wrapper = div(
-                    h4(header_text),
                     div(
                         toolbar,
                         raw_util(f'<pre><code id="{code_id}" class="language-{language}">{escaped_code}</code></pre>'),
@@ -133,9 +131,7 @@ class MiniPage(AbstractPage):
                 toolbar += a("Copy", href="#", cls="copy-btn", **{"data-target": code_id})
                 toolbar += a("View Raw", href="#", cls="view-raw-btn", **{"data-target": code_id, "style": "margin-left:10px;"})
                 escaped_code = html.escape(code)
-                header_text = f"{language.capitalize()} Example"
                 block_wrapper = div(
-                    h4(header_text),
                     div(
                         toolbar,
                         raw_util(f'<pre><code id="{code_id}" class="language-{language}">{escaped_code}</code></pre>'),
