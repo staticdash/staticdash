@@ -104,12 +104,14 @@ body {
   height: auto !important;
 }
 
+/* Tables */
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1em;
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
 }
 
 thead {
@@ -153,6 +155,7 @@ tbody tr:hover {
   background-color: #547a9f;
 }
 
+/* Sortable Tables */
 table.sortable th {
   cursor: pointer;
   position: relative;
@@ -176,6 +179,7 @@ table.sortable th.sorted-desc::after {
   content: "\25BC";
 }
 
+/* MiniPage Layout */
 .minipage-row {
   display: flex;
   width: 100%;
@@ -189,22 +193,31 @@ table.sortable th.sorted-desc::after {
   min-width: 0;
   box-sizing: border-box;
   padding: 10px;
-  overflow: hidden;
-  /* Optional: for visual separation */
-  /* background: #f8f8f8; */
-}
-
-.minipage-cell .syntax-block {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  overflow-x: auto;
 }
 
 .minipage-cell pre {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  max-height: 400px;
   overflow: auto;
 }
 
+.minipage-cell h4 {
+  margin-top: 0;
+}
+
+.minipage-cell .syntax-block {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.minipage-cell table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Syntax Blocks */
 .syntax-block {
   position: relative;
   margin: 1em 0;
@@ -230,7 +243,8 @@ table.sortable th.sorted-desc::after {
   z-index: 2;
 }
 
-.copy-btn, .view-raw-btn {
+.copy-btn,
+.view-raw-btn {
   color: #fff;
   background: #444;
   border-radius: 4px;
@@ -242,6 +256,12 @@ table.sortable th.sorted-desc::after {
   transition: background 0.2s;
 }
 
-.copy-btn:hover, .view-raw-btn:hover {
+.copy-btn:hover,
+.view-raw-btn:hover {
   background: #1abc9c;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  width: 100%;
 }

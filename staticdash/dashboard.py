@@ -51,34 +51,31 @@ class Page(AbstractPage):
         self.title = title
         self.add_header(title, level=1)
 
-    def render(self, index):
+    def render(self, index, downloads_dir=None, relative_prefix=""):
         elements = []
         for kind, content in self.elements:
             if kind == "minipage":
                 row_div = div(cls="minipage-row")
-                row_div += content.render(index)
+                row_div += content.render(index, downloads_dir=downloads_dir, relative_prefix=relative_prefix)
                 elements.append(row_div)
             elif kind == "header":
                 text, level = content
-                if level == 1:
-                    elements.append(h1(text))
-                elif level == 2:
-                    elements.append(h2(text))
-                elif level == 3:
-                    elements.append(h3(text))
-                elif level == 4:
-                    elements.append(h4(text))
+                elements.append({1: h1, 2: h2, 3: h3, 4: h4}[level](text))
             elif kind == "text":
                 elements.append(p(content))
             elif kind == "plot":
                 elements.append(div(content, cls="plot-container"))
             elif kind == "table":
                 table_html, _ = content
-                elements.append(raw_util(table_html))
+                wrapped = div(raw_util(table_html), cls="table-wrapper")
+                elements.append(wrapped)
             elif kind == "download":
                 file_path, label = content
+                file_uuid = f"{uuid.uuid4().hex}_{os.path.basename(file_path)}"
+                dst_path = os.path.join(downloads_dir, file_uuid)
+                shutil.copy2(file_path, dst_path)
                 btn = a(label or os.path.basename(file_path),
-                        href=file_path,
+                        href=f"{relative_prefix}downloads/{file_uuid}",
                         cls="download-button",
                         download=True)
                 elements.append(div(btn))
@@ -89,43 +86,43 @@ class Page(AbstractPage):
                 toolbar += a("Copy", href="#", cls="copy-btn", **{"data-target": code_id})
                 toolbar += a("View Raw", href="#", cls="view-raw-btn", **{"data-target": code_id, "style": "margin-left:10px;"})
                 escaped_code = html.escape(code)
-                code_block = div(
-                    toolbar,
-                    raw_util(f'<pre><code id="{code_id}" class="language-{language}">{escaped_code}</code></pre>'),
-                    cls="syntax-block"
+                header_text = f"{language.capitalize()} Example"
+                block_wrapper = div(
+                    h4(header_text),
+                    div(
+                        toolbar,
+                        raw_util(f'<pre><code id="{code_id}" class="language-{language}">{escaped_code}</code></pre>'),
+                        cls="syntax-block"
+                    )
                 )
-                elements.append(code_block)
+                elements.append(block_wrapper)
         return elements
 
 class MiniPage(AbstractPage):
     def __init__(self):
         super().__init__()
 
-    def render(self, index=None):
+    def render(self, index=None, downloads_dir=None, relative_prefix=""):
         row_div = div(cls="minipage-row")
         for kind, content in self.elements:
             cell = div(cls="minipage-cell")
             if kind == "header":
                 text, level = content
-                if level == 1:
-                    cell += h1(text)
-                elif level == 2:
-                    cell += h2(text)
-                elif level == 3:
-                    cell += h3(text)
-                elif level == 4:
-                    cell += h4(text)
+                cell += {1: h1, 2: h2, 3: h3, 4: h4}[level](text)
             elif kind == "text":
                 cell += p(content)
             elif kind == "plot":
                 cell += div(content, cls="plot-container")
             elif kind == "table":
                 table_html, _ = content
-                cell += raw_util(table_html)
+                cell += div(raw_util(table_html), cls="table-wrapper")
             elif kind == "download":
                 file_path, label = content
+                file_uuid = f"{uuid.uuid4().hex}_{os.path.basename(file_path)}"
+                dst_path = os.path.join(downloads_dir, file_uuid)
+                shutil.copy2(file_path, dst_path)
                 btn = a(label or os.path.basename(file_path),
-                        href=file_path,
+                        href=f"{relative_prefix}downloads/{file_uuid}",
                         cls="download-button",
                         download=True)
                 cell += div(btn)
@@ -136,12 +133,16 @@ class MiniPage(AbstractPage):
                 toolbar += a("Copy", href="#", cls="copy-btn", **{"data-target": code_id})
                 toolbar += a("View Raw", href="#", cls="view-raw-btn", **{"data-target": code_id, "style": "margin-left:10px;"})
                 escaped_code = html.escape(code)
-                code_block = div(
-                    toolbar,
-                    raw_util(f'<pre><code id="{code_id}" class="language-{language}">{escaped_code}</code></pre>'),
-                    cls="syntax-block"
+                header_text = f"{language.capitalize()} Example"
+                block_wrapper = div(
+                    h4(header_text),
+                    div(
+                        toolbar,
+                        raw_util(f'<pre><code id="{code_id}" class="language-{language}">{escaped_code}</code></pre>'),
+                        cls="syntax-block"
+                    )
                 )
-                cell += code_block
+                cell += block_wrapper
             row_div += cell
         return row_div
 
@@ -177,7 +178,7 @@ class Dashboard:
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"))
             with doc:
                 with div(cls="page-section", id=f"page-{page.slug}") as section:
-                    for el in page.render(0):
+                    for el in page.render(0, downloads_dir=downloads_dir, relative_prefix="../"):
                         section += el
             with open(os.path.join(pages_dir, f"{page.slug}.html"), "w") as f:
                 f.write(str(doc))
@@ -204,7 +205,7 @@ class Dashboard:
             with div(id="content"):
                 for idx, page in enumerate(self.pages):
                     with div(id=f"page-{page.slug}", cls="page-section", style="display:none;") as section:
-                        for el in page.render(idx):
+                        for el in page.render(idx, downloads_dir=downloads_dir, relative_prefix=""):
                             section += el
 
         with open(os.path.join(output_dir, "index.html"), "w") as f:
