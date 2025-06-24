@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Download</title>
+    <title>Export HTML</title>
     <link href="../assets/css/style.css" rel="stylesheet">
     <script src="../assets/js/script.js" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -11,16 +11,17 @@
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
   </head>
   <body>
-    <div class="page-section" id="page-download">
-      <h1>Download</h1>
-      <h2>Download Files</h2>
-      <p>Here is a button to download a file.</p>
+    <div class="page-section" id="page-export">
+      <h1>Export HTML</h1>
       <div>
-        <a class="download-button" download="download" href="../downloads/6e7f1f6d4245458189e6936e2613e676_test_file.txt">Download File</a>
+        <div class="syntax-block">
+          <div class="code-toolbar">
+            <a class="copy-btn" data-target="code-796bfabc" href="#">Copy</a>
+            <a class="view-raw-btn" data-target="code-796bfabc" href="#" style="margin-left:10px;">View Raw</a>
+          </div><pre><code id="code-796bfabc" class="language-python">dashboard.publish(output_dir=&quot;tutorial_output&quot;)</code></pre>
+        </div>
       </div>
-      <div>
-        <a class="download-button" download="download" href="../downloads/70981c8976fe479c959aa4730c58e1cf_test_file2.txt">Download Another File</a>
-      </div>
+      <p>Use `.publish()` to generate `index.html` and per-page HTML files.</p>
     </div>
   </body>
 </html>

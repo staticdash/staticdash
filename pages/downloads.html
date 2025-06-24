@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Download Buttons</title>
+    <link href="../assets/css/style.css" rel="stylesheet">
+    <script src="../assets/js/script.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+  </head>
+  <body>
+    <div class="page-section" id="page-downloads">
+      <h1>Download Buttons</h1>
+      <div>
+        <div class="syntax-block">
+          <div class="code-toolbar">
+            <a class="copy-btn" data-target="code-a937a3cd" href="#">Copy</a>
+            <a class="view-raw-btn" data-target="code-a937a3cd" href="#" style="margin-left:10px;">View Raw</a>
+          </div><pre><code id="code-a937a3cd" class="language-python">with open(&quot;tutorial_sample.txt&quot;, &quot;w&quot;) as f:
+    f.write(&quot;This is a sample file for download.&quot;)
+page.add_download(&quot;./tutorial_sample.txt&quot;, &quot;Download Sample File&quot;)</code></pre>
+        </div>
+      </div>
+      <p>Download buttons let users save your outputs, results, or code.</p>
+      <div>
+        <a class="download-button" download="download" href="../downloads/6d7464baecfd4a03979a899897acc3bb_tutorial_sample.txt">Download Sample File</a>
+      </div>
+    </div>
+  </body>
+</html>
