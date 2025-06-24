@@ -11,9 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function showPage(id) {
+  function showPage(pageId) {
     sections.forEach(section => section.style.display = "none");
-    const page = document.getElementById(id);
+    const page = document.getElementById(pageId);
     if (page) {
       page.style.display = "block";
 
@@ -24,8 +24,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     links.forEach(link => link.classList.remove("active"));
-    const activeLink = Array.from(links).find(link => link.dataset.target === id);
+    const activeLink = Array.from(links).find(link => link.dataset.target === pageId);
     if (activeLink) activeLink.classList.add("active");
+
+    if (window.Prism && typeof Prism.highlightAll === "function") {
+      Prism.highlightAll();
+    }
   }
 
   links.forEach(link => {
@@ -89,6 +93,34 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         rows.forEach(row => tbody.appendChild(row));
       });
+    });
+  });
+
+  // Syntax block copy/view raw
+  document.querySelectorAll(".copy-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.preventDefault();
+      const codeId = btn.dataset.target;
+      const code = document.getElementById(codeId);
+      if (code) {
+        navigator.clipboard.writeText(code.textContent);
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "Copy"; }, 1200);
+      }
+    });
+  });
+  document.querySelectorAll(".view-raw-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.preventDefault();
+      const codeId = btn.dataset.target;
+      const code = document.getElementById(codeId);
+      if (code) {
+        const win = window.open("", "_blank");
+        win.document.write("<pre>" + code.textContent.replace(/[<>&]/g, c => ({
+          '<': '&lt;', '>': '&gt;', '&': '&amp;'
+        }[c])) + "</pre>");
+        win.document.close();
+      }
     });
   });
 });
