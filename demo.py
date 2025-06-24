@@ -29,6 +29,14 @@ page1.add_header("Section 1: Introduction", level=2)
 page1.add_text("Welcome to the StaticDash demo. Below is a bar chart and a table.")
 page1.add_plot(fig1)
 page1.add_table(df)
+page1.add_syntax(
+    "import numpy as np\nprint(np.arange(10))",
+    language="python"
+)
+page1.add_syntax(
+    "console.log('Hello, world!');",
+    language="javascript"
+)
 
 # Page 2: Timeseries
 page2 = Page("timeseries", "Timeseries")
@@ -51,70 +59,35 @@ page4.add_text("Here is a button to download a file.")
 page4.add_download('./test_file.txt', "Download File")
 page4.add_download('./test_file2.txt', "Download Another File")
 
-# Demo Page with MiniPages
-mini1 = MiniPage(width=0.5)
-mini1.add_header("Left", level=2)
-mini1.add_text("Left content")
-
-mini2 = MiniPage(width=0.5)
-mini2.add_header("Right", level=2)
-mini2.add_text("Right content")
-
-row = MiniPage()
-row.add_minipage(mini1)
-row.add_minipage(mini2)
-
-page_demo = Page("demo", "Demo Page")
-page_demo.add_header("Demo", level=1)
-page_demo.add_minipage(row)
-
-# --- MiniPages: Figures next to figures ---
-mini_fig1 = MiniPage(width=0.5)
-mini_fig1.add_header("Bar Chart", level=3)
-mini_fig1.add_plot(fig1)
-
-mini_fig2 = MiniPage(width=0.5)
-mini_fig2.add_header("Line Chart", level=3)
-mini_fig2.add_plot(fig2)
-
-row_figs = MiniPage()
-row_figs.add_minipage(mini_fig1)
-row_figs.add_minipage(mini_fig2)
-
-# --- MiniPages: Tables next to tables ---
-mini_table1 = MiniPage(width=0.5)
-mini_table1.add_header("Category Table", level=3)
-mini_table1.add_table(df)
-
-mini_table2 = MiniPage(width=0.5)
-mini_table2.add_header("Timeseries Table", level=3)
-mini_table2.add_table(df2)
-
-row_tables = MiniPage()
-row_tables.add_minipage(mini_table1)
-row_tables.add_minipage(mini_table2)
-
-# --- MiniPages: Table next to a figure ---
-mini_table = MiniPage(width=0.5)
-mini_table.add_header("Category Table", level=3)
-mini_table.add_table(df)
-
-mini_fig = MiniPage(width=0.5)
-mini_fig.add_header("Bar Chart", level=3)
-mini_fig.add_plot(fig1)
-
-row_table_fig = MiniPage()
-row_table_fig.add_minipage(mini_table)
-row_table_fig.add_minipage(mini_fig)
-
-# --- Add all to a demo page ---
+# Demo Page with MiniPages (new usage)
 page_demo = Page("demo", "MiniPage Combinations Demo")
 page_demo.add_header("MiniPage Combinations", level=1)
 page_demo.add_text("Below are examples of MiniPages with different content combinations:")
 
-page_demo.add_minipage(row_figs)
-page_demo.add_minipage(row_tables)
-page_demo.add_minipage(row_table_fig)
+# Figures next to figures
+mini_figs = MiniPage()
+mini_figs.add_plot(fig1)
+mini_figs.add_plot(fig2)
+page_demo.add_minipage(mini_figs)
+
+# Tables next to tables
+mini_tables = MiniPage()
+mini_tables.add_table(df)
+mini_tables.add_table(df2)
+page_demo.add_minipage(mini_tables)
+
+# Table next to a figure
+mini_table_fig = MiniPage()
+mini_table_fig.add_table(df)
+mini_table_fig.add_plot(fig1)
+page_demo.add_minipage(mini_table_fig)
+
+# Mixed: plot, table, plot
+mini_mixed = MiniPage()
+mini_mixed.add_plot(fig1)
+mini_mixed.add_table(df)
+mini_mixed.add_plot(fig2)
+page_demo.add_minipage(mini_mixed)
 
 # Register pages
 dashboard.add_page(page1)

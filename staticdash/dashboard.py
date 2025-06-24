@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from dominate import document
 from dominate.tags import div, h1, h2, h3, h4, p, a, script, link
 from dominate.util import raw as raw_util
+import html
 
 class AbstractPage:
     def __init__(self):
@@ -39,6 +40,9 @@ class AbstractPage:
 
     def add_minipage(self, minipage):
         self.elements.append(("minipage", minipage))
+
+    def add_syntax(self, code, language="python"):
+        self.elements.append(("syntax", (code, language)))
 
 class Page(AbstractPage):
     def __init__(self, slug, title):
@@ -79,57 +83,62 @@ class Page(AbstractPage):
                         cls="download-button",
                         download=True)
                 section += div(btn)
+            elif kind == "syntax":
+                code, language = content
+                # Add a wrapper div for buttons and code
+                code_id = f"code-{uuid.uuid4().hex[:8]}"
+                toolbar = div(cls="code-toolbar")
+                toolbar += a("Copy", href="#", cls="copy-btn", **{"data-target": code_id})
+                toolbar += a("View Raw", href="#", cls="view-raw-btn", **{"data-target": code_id, "style": "margin-left:10px;"})
+
+                escaped_code = html.escape(code)
+                code_block = div(
+                    toolbar,
+                    raw_util(f'<pre><code id="{code_id}" class="language-{language}">{escaped_code}</code></pre>'),
+                    cls="syntax-block"
+                )
+                section += raw_util(str(code_block))
         return section
 
 class MiniPage(AbstractPage):
-    def __init__(self, width=1.0):
+    def __init__(self):
         super().__init__()
-        self.width = width
 
     def render(self, index=None):
-        style = f"flex: 0 0 {self.width * 100}%; max-width: {self.width * 100}%;"
-        container = div(cls="minipage", style=style)
-        minipage_row = []
+        row_div = div(cls="minipage-row")
         for kind, content in self.elements:
-            if kind == "minipage":
-                minipage_row.append(content)
-            else:
-                if minipage_row:
-                    row_div = div(cls="minipage-row")
-                    for mp in minipage_row:
-                        row_div += mp.render(index)
-                    container += row_div
-                    minipage_row = []
-                if kind == "header":
-                    text, level = content
-                    if level == 1:
-                        container += h1(text)
-                    elif level == 2:
-                        container += h2(text)
-                    elif level == 3:
-                        container += h3(text)
-                    elif level == 4:
-                        container += h4(text)
-                elif kind == "text":
-                    container += p(content)
-                elif kind == "plot":
-                    container += div(content, cls="plot-container")
-                elif kind == "table":
-                    table_html, _ = content
-                    container += raw_util(table_html)
-                elif kind == "download":
-                    file_path, label = content
-                    btn = a(label or os.path.basename(file_path),
-                            href=file_path,
-                            cls="download-button",
-                            download=True)
-                    container += div(btn)
-        if minipage_row:
-            row_div = div(cls="minipage-row")
-            for mp in minipage_row:
-                row_div += mp.render(index)
-            container += row_div
-        return container
+            cell = div(cls="minipage-cell")
+            if kind == "header":
+                text, level = content
+                if level == 1:
+                    cell += h1(text)
+                elif level == 2:
+                    cell += h2(text)
+                elif level == 3:
+                    cell += h3(text)
+                elif level == 4:
+                    cell += h4(text)
+            elif kind == "text":
+                cell += p(content)
+            elif kind == "plot":
+                cell += div(content, cls="plot-container")
+            elif kind == "table":
+                table_html, _ = content
+                cell += raw_util(table_html)
+            elif kind == "download":
+                file_path, label = content
+                btn = a(label or os.path.basename(file_path),
+                        href=file_path,
+                        cls="download-button",
+                        download=True)
+                cell += div(btn)
+            elif kind == "syntax":
+                code, language = content
+                pre = div(cls="syntax-container")
+                pre += raw_util(f"<pre><code class='{language}'>{code}</code></pre>")
+                cell += pre
+            row_div += cell
+        return row_div
 
 class Dashboard:
     def __init__(self, title="Dashboard"):
@@ -186,6 +195,12 @@ class Dashboard:
             index_doc.head.add(link(rel="stylesheet", href="assets/css/style.css"))
             index_doc.head.add(script(type="text/javascript", src="assets/js/script.js"))
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"))
+            # Add Prism.js and its theme
+            index_doc.head.add(link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css"))
+            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"))
+            # Add language support as needed
+            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"))
+            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"))
 
         with index_doc:
             with div(id="sidebar"):

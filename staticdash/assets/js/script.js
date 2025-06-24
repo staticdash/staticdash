@@ -91,4 +91,32 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   });
+
+  // Syntax block copy/view raw
+  document.querySelectorAll(".copy-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.preventDefault();
+      const codeId = btn.dataset.target;
+      const code = document.getElementById(codeId);
+      if (code) {
+        navigator.clipboard.writeText(code.textContent);
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = "Copy"; }, 1200);
+      }
+    });
+  });
+  document.querySelectorAll(".view-raw-btn").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.preventDefault();
+      const codeId = btn.dataset.target;
+      const code = document.getElementById(codeId);
+      if (code) {
+        const win = window.open("", "_blank");
+        win.document.write("<pre>" + code.textContent.replace(/[<>&]/g, c => ({
+          '<': '&lt;', '>': '&gt;', '&': '&amp;'
+        }[c])) + "</pre>");
+        win.document.close();
+      }
+    });
+  });
 });
