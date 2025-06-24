@@ -11,9 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function showPage(id) {
+  function showPage(pageId) {
     sections.forEach(section => section.style.display = "none");
-    const page = document.getElementById(id);
+    const page = document.getElementById(pageId);
     if (page) {
       page.style.display = "block";
 
@@ -24,8 +24,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     links.forEach(link => link.classList.remove("active"));
-    const activeLink = Array.from(links).find(link => link.dataset.target === id);
+    const activeLink = Array.from(links).find(link => link.dataset.target === pageId);
     if (activeLink) activeLink.classList.add("active");
+
+    if (window.Prism && typeof Prism.highlightAll === "function") {
+      Prism.highlightAll();
+    }
   }
 
   links.forEach(link => {

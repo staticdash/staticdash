@@ -21,8 +21,8 @@ class AbstractPage:
         self.elements.append(("text", text))
 
     def add_plot(self, plot):
-        html = raw_util(plot.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True}))
-        self.elements.append(("plot", html))
+        html_plot = raw_util(plot.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True}))
+        self.elements.append(("plot", html_plot))
 
     def add_table(self, df, table_id=None, sortable=True):
         if table_id is None:
@@ -30,8 +30,8 @@ class AbstractPage:
         classes = "table-hover table-striped"
         if sortable:
             classes += " sortable"
-        html = df.to_html(classes=classes, index=False, border=0, table_id=table_id, escape=False)
-        self.elements.append(("table", (html, table_id)))
+        html_table = df.to_html(classes=classes, index=False, border=0, table_id=table_id, escape=False)
+        self.elements.append(("table", (html_table, table_id)))
 
     def add_download(self, file_path, label=None):
         if not os.path.isfile(file_path):
@@ -52,53 +52,50 @@ class Page(AbstractPage):
         self.add_header(title, level=1)
 
     def render(self, index):
-        section = div()
-        minipage_row = []
+        elements = []
         for kind, content in self.elements:
             if kind == "minipage":
                 row_div = div(cls="minipage-row")
                 row_div += content.render(index)
-                section += row_div
+                elements.append(row_div)
             elif kind == "header":
                 text, level = content
                 if level == 1:
-                    section += h1(text)
+                    elements.append(h1(text))
                 elif level == 2:
-                    section += h2(text)
+                    elements.append(h2(text))
                 elif level == 3:
-                    section += h3(text)
+                    elements.append(h3(text))
                 elif level == 4:
-                    section += h4(text)
+                    elements.append(h4(text))
             elif kind == "text":
-                section += p(content)
+                elements.append(p(content))
             elif kind == "plot":
-                section += div(content, cls="plot-container")
+                elements.append(div(content, cls="plot-container"))
             elif kind == "table":
                 table_html, _ = content
-                section += raw_util(table_html)
+                elements.append(raw_util(table_html))
             elif kind == "download":
                 file_path, label = content
                 btn = a(label or os.path.basename(file_path),
                         href=file_path,
                         cls="download-button",
                         download=True)
-                section += div(btn)
+                elements.append(div(btn))
             elif kind == "syntax":
                 code, language = content
-                # Add a wrapper div for buttons and code
                 code_id = f"code-{uuid.uuid4().hex[:8]}"
                 toolbar = div(cls="code-toolbar")
                 toolbar += a("Copy", href="#", cls="copy-btn", **{"data-target": code_id})
                 toolbar += a("View Raw", href="#", cls="view-raw-btn", **{"data-target": code_id, "style": "margin-left:10px;"})
-
                 escaped_code = html.escape(code)
                 code_block = div(
                     toolbar,
                     raw_util(f'<pre><code id="{code_id}" class="language-{language}">{escaped_code}</code></pre>'),
                     cls="syntax-block"
                 )
-                section += raw_util(str(code_block))
-        return section
+                elements.append(code_block)
+        return elements
 
 class MiniPage(AbstractPage):
     def __init__(self):
@@ -134,9 +131,17 @@ class MiniPage(AbstractPage):
                 cell += div(btn)
             elif kind == "syntax":
                 code, language = content
-                pre = div(cls="syntax-container")
-                pre += raw_util(f"<pre><code class='{language}'>{code}</code></pre>")
-                cell += pre
+                code_id = f"code-{uuid.uuid4().hex[:8]}"
+                toolbar = div(cls="code-toolbar")
+                toolbar += a("Copy", href="#", cls="copy-btn", **{"data-target": code_id})
+                toolbar += a("View Raw", href="#", cls="view-raw-btn", **{"data-target": code_id, "style": "margin-left:10px;"})
+                escaped_code = html.escape(code)
+                code_block = div(
+                    toolbar,
+                    raw_util(f'<pre><code id="{code_id}" class="language-{language}">{escaped_code}</code></pre>'),
+                    cls="syntax-block"
+                )
+                cell += code_block
             row_div += cell
         return row_div
 
@@ -159,46 +164,32 @@ class Dashboard:
         os.makedirs(downloads_dir, exist_ok=True)
         shutil.copytree(assets_src, assets_dst, dirs_exist_ok=True)
 
+        # Per-page HTML
         for page in self.pages:
             doc = document(title=page.title)
             with doc.head:
                 doc.head.add(link(rel="stylesheet", href="../assets/css/style.css"))
                 doc.head.add(script(type="text/javascript", src="../assets/js/script.js"))
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"))
-
+                doc.head.add(link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css"))
+                doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"))
+                doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"))
+                doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"))
             with doc:
-                with div(cls="page-section", id=f"page-{page.slug}"):
-                    for kind, content in page.elements:
-                        if kind == "header":
-                            text, level = content
-                            if level == 1:
-                                h1(text)
-                            elif level == 2:
-                                h2(text)
-                            elif level == 3:
-                                h3(text)
-                            elif level == 4:
-                                h4(text)
-                        elif kind == "text":
-                            p(content)
-                        elif kind == "plot":
-                            div(content, cls="plot-container")
-                        elif kind == "table":
-                            table_html, _ = content
-                            doc.add(raw_util(table_html))
-
+                with div(cls="page-section", id=f"page-{page.slug}") as section:
+                    for el in page.render(0):
+                        section += el
             with open(os.path.join(pages_dir, f"{page.slug}.html"), "w") as f:
                 f.write(str(doc))
 
+        # Main index.html
         index_doc = document(title=self.title)
         with index_doc.head:
             index_doc.head.add(link(rel="stylesheet", href="assets/css/style.css"))
             index_doc.head.add(script(type="text/javascript", src="assets/js/script.js"))
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"))
-            # Add Prism.js and its theme
             index_doc.head.add(link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css"))
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"))
-            # Add language support as needed
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"))
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"))
 
@@ -213,8 +204,8 @@ class Dashboard:
             with div(id="content"):
                 for idx, page in enumerate(self.pages):
                     with div(id=f"page-{page.slug}", cls="page-section", style="display:none;") as section:
-                        rendered = page.render(idx)
-                        section += rendered  # This is correct
+                        for el in page.render(idx):
+                            section += el
 
         with open(os.path.join(output_dir, "index.html"), "w") as f:
             f.write(str(index_doc))
