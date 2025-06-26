@@ -2,7 +2,6 @@ import os
 import shutil
 import uuid
 import pandas as pd
-import plotly.graph_objects as go
 from dominate import document
 from dominate.tags import div, h1, h2, h3, h4, p, a, script, link
 from dominate.util import raw as raw_util
@@ -198,11 +197,13 @@ class Dashboard:
                 with div(id="sidebar-footer"):
                     a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
 
-            with div(id="content"):
-                for idx, page in enumerate(self.pages):
-                    with div(id=f"page-{page.slug}", cls="page-section", style="display:none;") as section:
-                        for el in page.render(idx, downloads_dir=downloads_dir, relative_prefix=""):
-                            section += el
+            with div(id="wrapper"):
+                with div(id="wrapper-inner"):
+                    with div(id="content"):
+                        for idx, page in enumerate(self.pages):
+                            with div(id=f"page-{page.slug}", cls="page-section", style="display:none;") as section:
+                                for el in page.render(idx, downloads_dir=downloads_dir, relative_prefix=""):
+                                    section += el
 
         with open(os.path.join(output_dir, "index.html"), "w") as f:
             f.write(str(index_doc))
