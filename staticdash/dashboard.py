@@ -160,7 +160,6 @@ class Dashboard:
         os.makedirs(downloads_dir, exist_ok=True)
         shutil.copytree(assets_src, assets_dst, dirs_exist_ok=True)
 
-        # Per-page HTML
         for page in self.pages:
             doc = document(title=page.title)
             with doc.head:
@@ -172,13 +171,23 @@ class Dashboard:
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"))
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"))
             with doc:
-                with div(cls="page-section", id=f"page-{page.slug}") as section:
-                    for el in page.render(0, downloads_dir=downloads_dir, relative_prefix="../"):
-                        section += el
+                with div(id="sidebar"):
+                    h1(self.title)
+                    with div(cls="nav-links"):
+                        for p in self.pages:
+                            a(p.title, cls="nav-link", href="#", **{"data-target": f"page-{p.slug}"})
+                    with div(id="sidebar-footer"):
+                        a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
+                with div(id="wrapper"):
+                    with div(id="wrapper-inner"):
+                        with div(id="content"):
+                            for idx, p in enumerate(self.pages):
+                                with div(id=f"page-{p.slug}", cls="page-section", style="display:none;") as section:
+                                    for el in p.render(idx, downloads_dir=downloads_dir, relative_prefix=""):
+                                        section += el
             with open(os.path.join(pages_dir, f"{page.slug}.html"), "w") as f:
                 f.write(str(doc))
 
-        # Main index.html
         index_doc = document(title=self.title)
         with index_doc.head:
             index_doc.head.add(link(rel="stylesheet", href="assets/css/style.css"))
@@ -192,8 +201,9 @@ class Dashboard:
         with index_doc:
             with div(id="sidebar"):
                 h1(self.title)
-                for page in self.pages:
-                    a(page.title, cls="nav-link", href="#", **{"data-target": f"page-{page.slug}"})
+                with div(cls="nav-links"):
+                    for page in self.pages:
+                        a(page.title, cls="nav-link", href="#", **{"data-target": f"page-{page.slug}"})
                 with div(id="sidebar-footer"):
                     a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
 
