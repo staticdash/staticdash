@@ -3,45 +3,37 @@ body {
   font-family: sans-serif;
   background-color: #ffffff;
   color: #333;
+  display: flex;
+  min-height: 100vh;
 }
 
-/* Fixed sidebar on the left */
+/* Sidebar */
 #sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
   width: 240px;
-  height: 100vh;
   background-color: #ffffff;
+  border-right: 1px solid #ccc;
   padding: 20px;
   box-sizing: border-box;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #888 #ffffff;
+  position: sticky;
+  top: 0;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  border-right: 1px solid #ccc;
-  z-index: 1000;
 }
 
-#sidebar::-webkit-scrollbar {
-  width: 6px;
-}
-
-#sidebar::-webkit-scrollbar-track {
-  background: #ffffff;
-}
-
-#sidebar::-webkit-scrollbar-thumb {
-  background-color: #888;
-  border-radius: 3px;
-}
-
+/* Sidebar header */
 #sidebar h1 {
   color: #2c3e50;
   font-size: 20px;
   margin-bottom: 20px;
+}
+
+/* Nav links container */
+#sidebar .nav-links {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Nav links */
@@ -71,7 +63,6 @@ body {
   color: #7f8c8d;
   text-align: center;
   line-height: 1.4;
-  margin-top: 40px;
   padding-top: 20px;
   border-top: 1px solid #ccc;
 }
@@ -85,24 +76,22 @@ body {
   text-decoration: underline;
 }
 
-/* Main wrapper stretches full width but content is pushed right */
+/* Wrapper */
 #wrapper {
-  margin-left: 240px;
-  padding: 0;
+  flex: 1;
   background-color: #ffffff;
-  min-height: 100vh;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Inner content area is centered up to max-width */
 #wrapper-inner {
-  max-width: 960px;
+  max-width: 2200px;
   margin: 0 auto;
   padding: 20px;
   box-sizing: border-box;
 }
 
-/* Content area */
 #content {
   width: 100%;
   box-sizing: border-box;
