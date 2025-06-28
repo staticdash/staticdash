@@ -1,7 +1,7 @@
 # staticdash
 
 <p align="center">
-  <img src="logo.svg" alt="staticdash logo" width="220" height="50">
+  <img src="logo.png" alt="staticdash logo" width="220" height="50">
 </p>
 
 staticdash is a lightweight Python module for creating static, multi-page HTML dashboards. It supports:
