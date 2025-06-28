@@ -34,7 +34,7 @@ pip install staticdash
 
 ## Live Demo
 
-[View the latest demo dashboard](https://briday1.github.io/staticdash/)
+[View the latest demo dashboard](https://staticdash.github.io/staticdash/)
 
 ---
 
