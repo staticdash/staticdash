@@ -13,9 +13,7 @@ staticdash is a lightweight Python module for creating static, multi-page HTML d
 ## Installation
 
 ```bash
-git clone https://github.com/briday1/staticdash.git
-cd staticdash
-pip install .
+pip install staticdash 
 ```
 
 ## Features
