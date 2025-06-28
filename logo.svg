@@ -1,0 +1,14 @@
+<svg width="220" height="50" xmlns="http://www.w3.org/2000/svg">
+  <text
+    x="110"
+    y="32"
+    text-anchor="middle"
+    font-family="Helvetica, Arial, sans-serif"
+    font-size="36"
+    letter-spacing="2"
+    alignment-baseline="middle"
+  >
+    <tspan fill="#2c3e50">static</tspan>
+    <tspan fill="#1abc9c" font-weight="bold" letter-spacing="0" dx="-10">dash</tspan>
+  </text>
+</svg>
