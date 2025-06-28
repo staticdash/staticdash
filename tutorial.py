@@ -3,12 +3,12 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-dashboard = Dashboard(title="StaticDash")
+dashboard = Dashboard(title="StaticDash: Full Tutorial")
 
 # --- 1. Introduction ---
 page_intro = Page("intro", "Welcome to StaticDash")
 page_intro.add_syntax(
-    '''dashboard = Dashboard(title="StaticDash")''',
+    '''dashboard = Dashboard(title="StaticDash: Full Tutorial")''',
     language="python"
 )
 page_intro.add_text(
