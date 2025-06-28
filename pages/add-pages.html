@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Welcome to StaticDash</title>
+    <title>Adding Pages</title>
     <link href="../assets/css/style.css" rel="stylesheet">
     <script src="../assets/js/script.js" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -11,16 +11,16 @@
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
   </head>
   <body>
-    <div class="page-section" id="page-intro">
-      <h1>Welcome to StaticDash</h1>
-      <p>StaticDash is a Python library for building beautiful, interactive, static dashboards—no server required. You can combine plots, tables, code, downloads, and more, all with a simple API. This tutorial walks you through every feature with matching code and rendered output.</p>
+    <div class="page-section" id="page-add-pages">
+      <h1>Adding Pages</h1>
+      <p>A dashboard is made up of one or more **pages**. Each page gets a title, a unique slug, and any content you want. To add a page, create a `Page` object and use `dashboard.add_page(page)`.</p>
       <div>
         <div class="syntax-block">
           <div class="code-toolbar">
-            <a class="copy-btn" data-target="code-5164b71d" href="#">Copy</a>
-            <a class="view-raw-btn" data-target="code-5164b71d" href="#" style="margin-left:10px;">View Raw</a>
-          </div><pre><code id="code-5164b71d" class="language-python">from staticdash.dashboard import Dashboard, Page
-dashboard = Dashboard(title=&quot;My Dashboard&quot;)</code></pre>
+            <a class="copy-btn" data-target="code-404906ea" href="#">Copy</a>
+            <a class="view-raw-btn" data-target="code-404906ea" href="#" style="margin-left:10px;">View Raw</a>
+          </div><pre><code id="code-404906ea" class="language-python">page = Page(&quot;overview&quot;, &quot;Overview&quot;)
+dashboard.add_page(page)</code></pre>
         </div>
       </div>
     </div>
