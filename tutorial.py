@@ -4,10 +4,10 @@ import pandas as pd
 import numpy as np
 
 # --- 1. Create a Dashboard ---
-dashboard = Dashboard(title="StaticDash Tutorial")
+dashboard = Dashboard(title="Demo", page_width=900)
 
 # --- 2. Introduction Page ---
-page_intro = Page("intro", "Welcome to StaticDash")
+page_intro = Page("intro", "Intro", page_width=800)
 page_intro.add_text(
     "StaticDash is a Python library for building beautiful, interactive, static dashboards—no server required. "
     "You can combine plots, tables, code, downloads, and more, all with a simple API. "
