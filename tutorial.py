@@ -1,10 +1,11 @@
-from staticdash.dashboard import Dashboard, Page, MiniPage
+from staticdash import Page, Dashboard
+from staticdash.dashboard import MiniPage
 import plotly.express as px
 import pandas as pd
 import numpy as np
 
 # --- 1. Create a Dashboard ---
-dashboard = Dashboard(title="Demo", page_width=900)
+dashboard = Dashboard("Demo: Nested Sidebar", page_width=900)
 
 # --- 2. Introduction Page ---
 page_intro = Page("intro", "Intro", page_width=800)
@@ -214,6 +215,29 @@ page_export.add_syntax(
     language="python"
 )
 dashboard.add_page(page_export)
+
+# --- Main Page ---
+main = Page("main", "Main Page")
+main.add_text("This is the main page.")
+
+# --- Subpage 1 ---
+sub1 = Page("sub1", "Subpage 1")
+sub1.add_text("This is subpage 1.")
+
+# --- Subpage 2 ---
+sub2 = Page("sub2", "Subpage 2")
+sub2.add_text("This is subpage 2.")
+
+# --- About Page ---
+about = Page("about", "About")
+about.add_text("This is an About page.")
+
+# --- Organize Pages ---
+main.add_subpage(sub1)
+main.add_subpage(sub2)
+
+dashboard.add_page(main)
+dashboard.add_page(about)
 
 # --- Export ---
 dashboard.publish(output_dir="tutorial_output")

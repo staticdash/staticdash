@@ -4,7 +4,7 @@ import uuid
 import pandas as pd
 import plotly.graph_objects as go
 from dominate import document
-from dominate.tags import div, h1, h2, h3, h4, p, a, script, link
+from dominate.tags import div, h1, h2, h3, h4, p, a, script, link, span
 from dominate.util import raw as raw_util
 import html
 
@@ -50,7 +50,11 @@ class Page(AbstractPage):
         self.slug = slug
         self.title = title
         self.page_width = page_width
+        self.children = []
         self.add_header(title, level=1)
+
+    def add_subpage(self, page):
+        self.children.append(page)
 
     def render(self, index, downloads_dir=None, relative_prefix="", inherited_width=None):
         effective_width = self.page_width or inherited_width
@@ -151,6 +155,36 @@ class Dashboard:
     def add_page(self, page):
         self.pages.append(page)
 
+    def _render_sidebar(self, pages, prefix="", current_slug=None):
+        for page in pages:
+            page_href = f"{prefix}{page.slug}.html"
+            is_active = (page.slug == current_slug)
+            # Check if any descendant is active
+            def has_active_child(page):
+                return any(
+                    child.slug == current_slug or has_active_child(child)
+                    for child in getattr(page, "children", [])
+                )
+            group_open = has_active_child(page)
+            link_classes = "nav-link"
+            if getattr(page, "children", []):
+                link_classes += " sidebar-parent"
+            if is_active:
+                link_classes += " active"
+            if getattr(page, "children", []):
+                group_cls = "sidebar-group"
+                if group_open or is_active:
+                    group_cls += " open"
+                with div(cls=group_cls):
+                    a([
+                        span("▶", cls="sidebar-arrow"),
+                        page.title
+                    ], cls=link_classes, href=page_href)
+                    with div(cls="sidebar-children"):
+                        self._render_sidebar(page.children, prefix, current_slug)
+            else:
+                a(page.title, cls=link_classes, href=page_href)
+
     def publish(self, output_dir="output"):
         output_dir = os.path.abspath(output_dir)
         pages_dir = os.path.join(output_dir, "pages")
@@ -162,8 +196,7 @@ class Dashboard:
         os.makedirs(downloads_dir, exist_ok=True)
         shutil.copytree(assets_src, assets_dst, dirs_exist_ok=True)
 
-        # Per-page HTML
-        for page in self.pages:
+        def write_page(page):
             doc = document(title=page.title)
             with doc.head:
                 doc.head.add(link(rel="stylesheet", href="../assets/css/style.css"))
@@ -174,11 +207,24 @@ class Dashboard:
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"))
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"))
             with doc:
-                with div(cls="page-section", id=f"page-{page.slug}") as section:
-                    for el in page.render(0, downloads_dir=downloads_dir, relative_prefix="../"):
-                        section += el
+                with div(id="sidebar"):
+                    a(self.title, href="../index.html", cls="sidebar-title")
+                    self._render_sidebar(self.pages, prefix="", current_slug=page.slug)
+                    with div(id="sidebar-footer"):
+                        a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
+                with div(id="content"):
+                    with div(cls="content-inner"):
+                        for el in page.render(0, downloads_dir=downloads_dir, relative_prefix="../"):
+                            div(el)
             with open(os.path.join(pages_dir, f"{page.slug}.html"), "w") as f:
                 f.write(str(doc))
+            # Recursively write subpages
+            for child in getattr(page, "children", []):
+                write_page(child)
+
+        # Write all pages and subpages
+        for page in self.pages:
+            write_page(page)
 
         # Main index.html
         index_doc = document(title=self.title)
@@ -198,18 +244,14 @@ class Dashboard:
 
         with index_doc:
             with div(id="sidebar"):
-                h1(self.title)
-                for page in self.pages:
-                    a(page.title, cls="nav-link", href="#", **{"data-target": f"page-{page.slug}"})
+                a(self.title, href="index.html", cls="sidebar-title")
+                self._render_sidebar(self.pages, prefix="pages/", current_slug=self.pages[0].slug)
                 with div(id="sidebar-footer"):
                     a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
-
             with div(id="content"):
                 with div(cls="content-inner"):
-                    for idx, page in enumerate(self.pages):
-                        with div(id=f"page-{page.slug}", cls="page-section", style="display:none;") as section:
-                            for el in page.render(idx, downloads_dir=downloads_dir, relative_prefix=""):
-                                section += el
+                    for el in self.pages[0].render(0, downloads_dir=downloads_dir, relative_prefix=""):
+                        div(el)
 
         with open(os.path.join(output_dir, "index.html"), "w") as f:
             f.write(str(index_doc))
