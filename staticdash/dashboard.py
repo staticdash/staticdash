@@ -12,6 +12,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, 
 from reportlab.platypus.tableofcontents import TableOfContents
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
+from reportlab.lib.units import inch
 import io
 
 class AbstractPage:
@@ -256,23 +257,17 @@ class Dashboard:
 
     def publish_pdf(self, output_path="dashboard_report.pdf", pagesize="A4", include_toc=True):
         from reportlab.lib.pagesizes import A4, letter
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib import colors
-        from reportlab.lib.units import inch
         import tempfile
         import os
-        from reportlab.platypus.tableofcontents import TableOfContents
 
         page_size = A4 if pagesize.upper() == "A4" else letter
 
         doc = SimpleDocTemplate(output_path, pagesize=page_size, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72)
         styles = getSampleStyleSheet()
-        # Only add custom styles if not already present
         if 'SectionTitle' not in styles:
             styles.add(ParagraphStyle(name='SectionTitle', fontSize=18, leading=22, spaceAfter=12, spaceBefore=18, fontName='Helvetica-Bold'))
         if 'SubSectionTitle' not in styles:
             styles.add(ParagraphStyle(name='SubSectionTitle', fontSize=14, leading=18, spaceAfter=8, spaceBefore=12, fontName='Helvetica-Bold'))
-        # Use a unique name for the code style to avoid KeyError
         if 'CodeBlock' not in styles:
             styles.add(ParagraphStyle(name='CodeBlock', fontName='Courier', fontSize=9, leading=12, backColor=colors.whitesmoke, leftIndent=12, rightIndent=12, spaceAfter=8, borderPadding=4))
         normal_style = styles['Normal']
@@ -284,7 +279,8 @@ class Dashboard:
             ParagraphStyle(fontName='Helvetica', fontSize=12, name='TOCHeading2', leftIndent=40, firstLineIndent=-20, spaceBefore=0, leading=14),
         ]
 
-        section_numbers = []
+        # --- Outline/bookmark support ---
+        outline_entries = []
 
         def render_page(page, level=0, sec_prefix=[]):
             if len(sec_prefix) <= level:
@@ -293,13 +289,16 @@ class Dashboard:
                 sec_prefix[level] += 1
                 sec_prefix = sec_prefix[:level+1]
             section_num = ".".join(str(n) for n in sec_prefix)
-            section_numbers.append((level, section_num, page.title))
-
+            # Save outline info for afterFlowable
+            outline_entries.append((f"{section_num} {page.title}", level, section_num))
             if level == 0:
                 style = styles['SectionTitle']
             else:
                 style = styles['SubSectionTitle']
-            story.append(Paragraph(f"{section_num} {page.title}", style))
+            # Add a unique bookmark name
+            bookmark_name = f"section_{section_num.replace('.', '_')}"
+            para = Paragraph(f'<a name="{bookmark_name}"/>{section_num} {page.title}', style)
+            story.append(para)
             if include_toc:
                 toc.addEntry(level, f"{section_num} {page.title}", None)
             story.append(Spacer(1, 12))
@@ -359,7 +358,6 @@ class Dashboard:
                         story.append(Paragraph(f"<font face='Courier'>{code_html}</font>", styles['CodeBlock']))
                         story.append(Spacer(1, 12))
                     elif kind == "minipage":
-                        # Recursively render the elements of the minipage
                         render_elements(content.elements)
 
             render_elements(page.elements)
@@ -378,4 +376,17 @@ class Dashboard:
         for page in self.pages:
             render_page(page)
 
-        doc.build(story)
+        # --- afterFlowable callback for PDF outline ---
+        def after_flowable(flowable):
+            # Only Paragraphs with anchor/bookmark
+            if hasattr(flowable, 'getPlainText'):
+                text = flowable.getPlainText()
+                for title, level, section_num in outline_entries:
+                    if title in text:
+                        bookmark_name = f"section_{section_num.replace('.', '_')}"
+                        # Add outline entry and bookmark
+                        doc.canv.bookmarkPage(bookmark_name)
+                        doc.canv.addOutlineEntry(title, bookmark_name, level=level, closed=False)
+                        break
+
+        doc.build(story, afterFlowable=after_flowable)
