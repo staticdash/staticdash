@@ -15,7 +15,8 @@ requires-python = ">=3.8"
 dependencies = [
     "plotly",
     "pandas",
-    "dominate"
+    "dominate",
+    "reportlab"
 ]
 
 [tool.setuptools]

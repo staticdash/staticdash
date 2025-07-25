@@ -7,6 +7,12 @@ from dominate import document
 from dominate.tags import div, h1, h2, h3, h4, p, a, script, link, span
 from dominate.util import raw as raw_util
 import html
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle, Image
+from reportlab.platypus.tableofcontents import TableOfContents
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+import io
 
 class AbstractPage:
     def __init__(self):
@@ -21,17 +27,10 @@ class AbstractPage:
         self.elements.append(("text", text, width))
 
     def add_plot(self, plot, width=None):
-        html_plot = plot.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})
-        self.elements.append(("plot", html_plot, width))
+        self.elements.append(("plot", plot, width))
 
     def add_table(self, df, table_id=None, sortable=True, width=None):
-        if table_id is None:
-            table_id = f"table-{len(self.elements)}"
-        classes = "table-hover table-striped"
-        if sortable:
-            classes += " sortable"
-        html_table = df.to_html(classes=classes, index=False, border=0, table_id=table_id, escape=False)
-        self.elements.append(("table", (html_table, table_id), width))
+        self.elements.append(("table", df, width))
 
     def add_download(self, file_path, label=None, width=None):
         if not os.path.isfile(file_path):
@@ -67,15 +66,17 @@ class Page(AbstractPage):
                 outer_style = "display: flex; justify-content: center; margin: 0 auto;"
             elem = None
             if kind == "text":
-                elem = p(content)  # always wrap text in a tag
+                elem = p(content)
             elif kind == "header":
                 text, level = content
                 header_tag = {1: h1, 2: h2, 3: h3, 4: h4}[level]
                 elem = header_tag(text)
             elif kind == "plot":
-                elem = div(raw_util(content))
+                fig = content
+                elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})))
             elif kind == "table":
-                html_table, _ = content
+                df = content
+                html_table = df.to_html(classes="table-hover table-striped", index=False, border=0, table_id=f"table-{index}", escape=False)
                 elem = div(raw_util(html_table))
             elif kind == "download":
                 file_path, label = content
@@ -120,9 +121,11 @@ class MiniPage(AbstractPage):
                 header_tag = {1: h1, 2: h2, 3: h3, 4: h4}[level]
                 elem = header_tag(text)
             elif kind == "plot":
-                elem = raw_util(content)
+                fig = content
+                elem = raw_util(fig.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True}))
             elif kind == "table":
-                html_table, _ = content
+                df = content
+                html_table = df.to_html(classes="table-hover table-striped", index=False, border=0, table_id=f"table-{index}", escape=False)
                 elem = raw_util(html_table)
             elif kind == "download":
                 file_path, label = content
@@ -138,7 +141,6 @@ class MiniPage(AbstractPage):
                 )
             elif kind == "minipage":
                 elem = content.render(index, downloads_dir=downloads_dir, relative_prefix=relative_prefix, inherited_width=effective_width)
-            # Center and size if width is set
             if el_width is not None:
                 elem = div(elem, style=style)
                 elem = div(elem, style=outer_style)
@@ -150,7 +152,7 @@ class Dashboard:
     def __init__(self, title="Dashboard", page_width=900):
         self.title = title
         self.pages = []
-        self.page_width = page_width  # in pixels
+        self.page_width = page_width
 
     def add_page(self, page):
         self.pages.append(page)
@@ -159,7 +161,6 @@ class Dashboard:
         for page in pages:
             page_href = f"{prefix}{page.slug}.html"
             is_active = (page.slug == current_slug)
-            # Check if any descendant is active
             def has_active_child(page):
                 return any(
                     child.slug == current_slug or has_active_child(child)
@@ -218,15 +219,12 @@ class Dashboard:
                             div(el)
             with open(os.path.join(pages_dir, f"{page.slug}.html"), "w") as f:
                 f.write(str(doc))
-            # Recursively write subpages
             for child in getattr(page, "children", []):
                 write_page(child)
 
-        # Write all pages and subpages
         for page in self.pages:
             write_page(page)
 
-        # Main index.html
         index_doc = document(title=self.title)
         with index_doc.head:
             index_doc.head.add(link(rel="stylesheet", href="assets/css/style.css"))
@@ -255,3 +253,129 @@ class Dashboard:
 
         with open(os.path.join(output_dir, "index.html"), "w") as f:
             f.write(str(index_doc))
+
+    def publish_pdf(self, output_path="dashboard_report.pdf", pagesize="A4", include_toc=True):
+        from reportlab.lib.pagesizes import A4, letter
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib import colors
+        from reportlab.lib.units import inch
+        import tempfile
+        import os
+        from reportlab.platypus.tableofcontents import TableOfContents
+
+        page_size = A4 if pagesize.upper() == "A4" else letter
+
+        doc = SimpleDocTemplate(output_path, pagesize=page_size, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72)
+        styles = getSampleStyleSheet()
+        # Only add custom styles if not already present
+        if 'SectionTitle' not in styles:
+            styles.add(ParagraphStyle(name='SectionTitle', fontSize=18, leading=22, spaceAfter=12, spaceBefore=18, fontName='Helvetica-Bold'))
+        if 'SubSectionTitle' not in styles:
+            styles.add(ParagraphStyle(name='SubSectionTitle', fontSize=14, leading=18, spaceAfter=8, spaceBefore=12, fontName='Helvetica-Bold'))
+        # Use a unique name for the code style to avoid KeyError
+        if 'CodeBlock' not in styles:
+            styles.add(ParagraphStyle(name='CodeBlock', fontName='Courier', fontSize=9, leading=12, backColor=colors.whitesmoke, leftIndent=12, rightIndent=12, spaceAfter=8, borderPadding=4))
+        normal_style = styles['Normal']
+
+        story = []
+        toc = TableOfContents()
+        toc.levelStyles = [
+            ParagraphStyle(fontName='Helvetica-Bold', fontSize=14, name='TOCHeading1', leftIndent=20, firstLineIndent=-20, spaceBefore=5, leading=16),
+            ParagraphStyle(fontName='Helvetica', fontSize=12, name='TOCHeading2', leftIndent=40, firstLineIndent=-20, spaceBefore=0, leading=14),
+        ]
+
+        section_numbers = []
+
+        def render_page(page, level=0, sec_prefix=[]):
+            if len(sec_prefix) <= level:
+                sec_prefix.append(1)
+            else:
+                sec_prefix[level] += 1
+                sec_prefix = sec_prefix[:level+1]
+            section_num = ".".join(str(n) for n in sec_prefix)
+            section_numbers.append((level, section_num, page.title))
+
+            if level == 0:
+                style = styles['SectionTitle']
+            else:
+                style = styles['SubSectionTitle']
+            story.append(Paragraph(f"{section_num} {page.title}", style))
+            if include_toc:
+                toc.addEntry(level, f"{section_num} {page.title}", None)
+            story.append(Spacer(1, 12))
+
+            def render_elements(elements):
+                for kind, content, _ in elements:
+                    if kind == "text":
+                        story.append(Paragraph(content, normal_style))
+                        story.append(Spacer(1, 8))
+                    elif kind == "header":
+                        text, level_ = content
+                        header_style = styles['Heading{}'.format(min(level_+1, 4))]
+                        story.append(Paragraph(text, header_style))
+                        story.append(Spacer(1, 8))
+                    elif kind == "table":
+                        df = content
+                        try:
+                            data = [df.columns.tolist()] + df.values.tolist()
+                            t = Table(data, repeatRows=1)
+                            t.setStyle(TableStyle([
+                                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                            ]))
+                            story.append(t)
+                            story.append(Spacer(1, 12))
+                        except Exception:
+                            story.append(Paragraph("Table could not be rendered.", normal_style))
+                    elif kind == "plot":
+                        fig = content
+                        try:
+                            import plotly.graph_objects as go
+                            import plotly.io as pio
+                            if not isinstance(fig, go.Figure):
+                                raise ValueError("add_plot must be called with a plotly.graph_objects.Figure")
+                            import tempfile
+                            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
+                                fig.write_image(tmpfile.name, width=500, height=300, scale=2)
+                                with open(tmpfile.name, "rb") as imgf:
+                                    img_bytes = imgf.read()
+                                img_buf = io.BytesIO(img_bytes)
+                                story.append(Spacer(1, 8))
+                                story.append(Image(img_buf, width=5*inch, height=3*inch))
+                                story.append(Spacer(1, 12))
+                            os.unlink(tmpfile.name)
+                        except Exception as e:
+                            story.append(Paragraph(f"Plot rendering not supported in PDF: {e}", normal_style))
+                    elif kind == "syntax":
+                        code, language = content
+                        story.append(Paragraph(f"<b>Code ({language}):</b>", normal_style))
+                        story.append(Spacer(1, 4))
+                        code_html = html.escape(code).replace(' ', '&nbsp;').replace('\n', '<br/>')
+                        story.append(Paragraph(f"<font face='Courier'>{code_html}</font>", styles['CodeBlock']))
+                        story.append(Spacer(1, 12))
+                    elif kind == "minipage":
+                        # Recursively render the elements of the minipage
+                        render_elements(content.elements)
+
+            render_elements(page.elements)
+
+            for child in getattr(page, "children", []):
+                render_page(child, level=level+1, sec_prefix=sec_prefix.copy())
+
+            if level == 0:
+                story.append(PageBreak())
+
+        if include_toc:
+            story.append(Paragraph("Table of Contents", styles['Title']))
+            story.append(toc)
+            story.append(PageBreak())
+
+        for page in self.pages:
+            render_page(page)
+
+        doc.build(story)
