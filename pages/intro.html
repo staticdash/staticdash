@@ -11,12 +11,43 @@
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
   </head>
   <body>
-    <div class="page-section" id="page-intro">
-      <div style="max-width: 800px; margin: 0 auto; width: 100%;">
-        <h1>Intro</h1>
-        <p>StaticDash is a Python library for building beautiful, interactive, static dashboards—no server required. You can combine plots, tables, code, downloads, and more, all with a simple API. This tutorial walks you through every feature with matching code and rendered output.</p>
-        <div class="syntax-block"><pre class="syntax-block"><code class="language-python">from staticdash.dashboard import Dashboard, Page
+    <div id="sidebar">
+      <a class="sidebar-title" href="../index.html">Demo: Nested Sidebar</a>
+      <a class="nav-link active" href="intro.html">Intro</a>
+      <a class="nav-link" href="add-pages.html">Adding Pages</a>
+      <a class="nav-link" href="headers.html">Headers &amp; Text</a>
+      <a class="nav-link" href="plots.html">Plotly Figures</a>
+      <a class="nav-link" href="tables.html">Tables</a>
+      <a class="nav-link" href="downloads.html">Download Buttons</a>
+      <a class="nav-link" href="minipage.html">MiniPages (Horizontal Rows)</a>
+      <a class="nav-link" href="minipage2.html">MiniPages: Mixed Content</a>
+      <a class="nav-link" href="syntax.html">Syntax Highlighted Code</a>
+      <a class="nav-link" href="combo.html">Combining Features</a>
+      <a class="nav-link" href="export.html">Export HTML</a>
+      <div class="sidebar-group">
+        <a class="nav-link sidebar-parent" href="main.html">
+          <span class="sidebar-arrow">▶</span>Main Page
+        </a>
+        <div class="sidebar-children">
+          <a class="nav-link" href="sub1.html">Subpage 1</a>
+          <a class="nav-link" href="sub2.html">Subpage 2</a>
+        </div>
+      </div>
+      <a class="nav-link" href="about.html">About</a>
+      <div id="sidebar-footer">
+        <a href="https://pypi.org/project/staticdash/" target="_blank">Produced by staticdash</a>
+      </div>
+    </div>
+    <div id="content">
+      <div class="content-inner">
+        <div>
+          <div style="max-width: 800px; margin: 0 auto; width: 100%;">
+            <h1>Intro</h1>
+            <p>StaticDash is a Python library for building beautiful, interactive, static dashboards—no server required. You can combine plots, tables, code, downloads, and more, all with a simple API. This tutorial walks you through every feature with matching code and rendered output.</p>
+            <div class="syntax-block"><pre class="syntax-block"><code class="language-python">from staticdash.dashboard import Dashboard, Page
 dashboard = Dashboard(title=&quot;My Dashboard&quot;)</code></pre></div>
+          </div>
+        </div>
       </div>
     </div>
   </body>

@@ -1,50 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const links = document.querySelectorAll(".nav-link");
-  const sections = document.querySelectorAll(".page-section");
-
-  function resizePlotsIn(section) {
-    const plots = section.querySelectorAll(".plotly-graph-div");
-    plots.forEach(plot => {
-      if (typeof Plotly !== "undefined" && plot.data) {
-        Plotly.Plots.resize(plot);
-      }
-    });
-  }
-
-  function showPage(pageId) {
-    sections.forEach(section => section.style.display = "none");
-    const page = document.getElementById(pageId);
-    if (page) {
-      page.style.display = "block";
-
-      // Resize Plotly charts within the newly visible section
-      requestAnimationFrame(() => {
-        resizePlotsIn(page);
-      });
-    }
-
-    links.forEach(link => link.classList.remove("active"));
-    const activeLink = Array.from(links).find(link => link.dataset.target === pageId);
-    if (activeLink) activeLink.classList.add("active");
-
-    if (window.Prism && typeof Prism.highlightAll === "function") {
-      Prism.highlightAll();
-    }
-  }
-
-  links.forEach(link => {
-    link.addEventListener("click", e => {
-      e.preventDefault();
-      const targetId = link.dataset.target;
-      showPage(targetId);
-    });
-  });
-
-  // Initial page load
-  if (sections.length > 0) {
-    showPage(sections[0].id);
-  }
-
   // Table sorting for tables with class "sortable"
   document.querySelectorAll("table.sortable").forEach(function (table) {
     const headers = table.querySelectorAll("thead th");
@@ -123,4 +77,58 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
+  // --- Sidebar dropdowns (remember open state) ---
+  // Helper: get unique slug for each group from the link's href
+  function getGroupSlug(group) {
+    const link = group.querySelector('.sidebar-parent');
+    return link ? link.getAttribute('href') : null;
+  }
+
+  // Restore open groups from localStorage
+  const openGroups = JSON.parse(localStorage.getItem("sidebar-open-groups") || "[]");
+  document.querySelectorAll('.sidebar-group').forEach(group => {
+    const slug = getGroupSlug(group);
+    if (slug && openGroups.includes(slug)) {
+      group.classList.add('open');
+    }
+  });
+
+  // Toggle open/closed and save state
+  document.querySelectorAll('.sidebar-parent').forEach(parent => {
+    parent.addEventListener('click', function(e) {
+      if (e.target.classList.contains('sidebar-arrow')) {
+        e.preventDefault();
+        const group = parent.closest('.sidebar-group');
+        if (group) {
+          group.classList.toggle('open');
+          // Save open groups to localStorage
+          const allGroups = Array.from(document.querySelectorAll('.sidebar-group'));
+          const open = allGroups
+            .filter(g => g.classList.contains('open'))
+            .map(getGroupSlug)
+            .filter(Boolean);
+          localStorage.setItem("sidebar-open-groups", JSON.stringify(open));
+        }
+      }
+    });
+  });
+
+  // --- Sidebar scroll position persistence ---
+  const sidebar = document.getElementById("sidebar");
+  // Restore scroll position on load
+  if (sidebar && localStorage.getItem("sidebar-scroll")) {
+    sidebar.scrollTop = parseInt(localStorage.getItem("sidebar-scroll"), 10);
+  }
+  // Save scroll position before navigating away
+  window.addEventListener("pagehide", () => {
+    if (sidebar) {
+      localStorage.setItem("sidebar-scroll", sidebar.scrollTop);
+    }
+  });
+
+  // Enable sidebar transitions after initial render
+  setTimeout(() => {
+    document.body.classList.add("sidebar-animate");
+  }, 0);
 });

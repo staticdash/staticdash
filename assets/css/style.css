@@ -58,8 +58,9 @@ body {
 }
 
 .nav-link.active {
-  color: #ffffff;
-  background-color: #1abc9c;
+  background: #16a085;
+  color: #fff !important;
+  border-radius: 4px;
 }
 
 #sidebar-footer {
@@ -321,4 +322,53 @@ table.sortable th.sorted-desc::after {
 table, .syntax-block, pre {
   max-width: 100%;
   overflow-x: auto;
+}
+
+/* Sidebar Styles */
+.sidebar-group { margin-bottom: 0; }
+.sidebar-parent { cursor: pointer; font-weight: bold; display: flex; align-items: center; }
+.sidebar-arrow {
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform 0.2s;
+}
+.sidebar-group.open > .sidebar-parent .sidebar-arrow {
+  transform: rotate(90deg);
+}
+
+/* By default, no transition */
+.sidebar-children {
+  margin-left: 18px;
+  max-height: 0;
+  overflow: hidden;
+}
+
+/* When open, show content */
+.sidebar-group.open > .sidebar-children {
+  max-height: 500px; /* or a value big enough for your content */
+}
+
+/* Enable transition only after page load */
+body.sidebar-animate .sidebar-children {
+  transition: max-height 0.25s cubic-bezier(.4,0,.2,1);
+}
+
+.sidebar-title {
+  display: block;
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 1em;
+  color: #fff;
+  text-decoration: none;
+  text-align: left;
+  padding: 10px 15px;
+  border-radius: 10px;
+  background: none;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.sidebar-title:hover {
+  background-color: #34495e;
+  color: #fff;
+  text-decoration: none;
 }
