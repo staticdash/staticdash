@@ -330,10 +330,6 @@ table, .syntax-block, pre {
 .sidebar-arrow {
   display: inline-block;
   margin-right: 6px;
-  transition: transform 0.2s;
-}
-.sidebar-group.open > .sidebar-parent .sidebar-arrow {
-  transform: rotate(90deg);
 }
 
 /* By default, no transition */
@@ -351,6 +347,10 @@ table, .syntax-block, pre {
 /* Enable transition only after page load */
 body.sidebar-animate .sidebar-children {
   transition: max-height 0.25s cubic-bezier(.4,0,.2,1);
+}
+
+body.sidebar-animate .sidebar-arrow {
+  transition: transform 0.2s;
 }
 
 .sidebar-title {
