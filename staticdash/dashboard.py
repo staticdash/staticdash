@@ -325,14 +325,28 @@ class Dashboard:
                             data = [df.columns.tolist()] + df.values.tolist()
                             t = Table(data, repeatRows=1)
                             t.setStyle(TableStyle([
-                                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#222C36")),  # dark header
                                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                                 ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                                ('TOPPADDING', (0, 0), (-1, 0), 10),
+                                # Zebra stripes for rows (alternate row coloring)
+                                ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+                                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#B0B8C1")),
+                                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                                ('FONTSIZE', (0, 1), (-1, -1), 10),
+                                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                                ('TOPPADDING', (0, 1), (-1, -1), 6),
+                                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
                             ]))
+                            for row in range(1, len(data)):
+                                if row % 2 == 0:
+                                    t.setStyle(TableStyle([
+                                        ('BACKGROUND', (0, row), (-1, row), colors.HexColor("#F5F7FA")),
+                                    ]))
                             story.append(t)
                             story.append(Spacer(1, 12))
                         except Exception:
@@ -344,13 +358,20 @@ class Dashboard:
                             import plotly.io as pio
                             if not isinstance(fig, go.Figure):
                                 raise ValueError("add_plot must be called with a plotly.graph_objects.Figure")
+                            # Set larger figure size and higher scale (DPI)
+                            fig.update_layout(
+                                margin=dict(l=10, r=10, t=30, b=30),  # Tight margins
+                                width=900,  # Larger width in pixels
+                                height=540  # Larger height in pixels
+                            )
                             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
-                                fig.write_image(tmpfile.name, width=500, height=300, scale=2)
+                                fig.write_image(tmpfile.name, width=900, height=540, scale=3)  # scale=3 for higher DPI
                                 with open(tmpfile.name, "rb") as imgf:
                                     img_bytes = imgf.read()
                                 img_buf = io.BytesIO(img_bytes)
                                 story.append(Spacer(1, 8))
-                                story.append(Image(img_buf, width=5*inch, height=3*inch))
+                                # Make the image take up more space in the PDF (7x4.2 inches)
+                                story.append(Image(img_buf, width=6*inch, height=3.6*inch))
                                 story.append(Spacer(1, 12))
                             os.unlink(tmpfile.name)
                         except Exception as e:
