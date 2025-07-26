@@ -14,6 +14,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 import io
+import tempfile
 
 class AbstractPage:
     def __init__(self):
@@ -257,30 +258,42 @@ class Dashboard:
 
     def publish_pdf(self, output_path="dashboard_report.pdf", pagesize="A4", include_toc=True):
         from reportlab.lib.pagesizes import A4, letter
-        import tempfile
-        import os
-
         page_size = A4 if pagesize.upper() == "A4" else letter
 
-        doc = SimpleDocTemplate(output_path, pagesize=page_size, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72)
         styles = getSampleStyleSheet()
-        if 'SectionTitle' not in styles:
-            styles.add(ParagraphStyle(name='SectionTitle', fontSize=18, leading=22, spaceAfter=12, spaceBefore=18, fontName='Helvetica-Bold'))
-        if 'SubSectionTitle' not in styles:
-            styles.add(ParagraphStyle(name='SubSectionTitle', fontSize=14, leading=18, spaceAfter=8, spaceBefore=12, fontName='Helvetica-Bold'))
+        styles['Heading1'].fontSize = 18
+        styles['Heading1'].leading = 22
+        styles['Heading1'].spaceAfter = 12
+        styles['Heading1'].spaceBefore = 18
+        styles['Heading1'].fontName = 'Helvetica-Bold'
+        styles['Heading2'].fontSize = 14
+        styles['Heading2'].leading = 18
+        styles['Heading2'].spaceAfter = 8
+        styles['Heading2'].spaceBefore = 12
+        styles['Heading2'].fontName = 'Helvetica-Bold'
         if 'CodeBlock' not in styles:
             styles.add(ParagraphStyle(name='CodeBlock', fontName='Courier', fontSize=9, leading=12, backColor=colors.whitesmoke, leftIndent=12, rightIndent=12, spaceAfter=8, borderPadding=4))
         normal_style = styles['Normal']
 
         story = []
-        toc = TableOfContents()
-        toc.levelStyles = [
-            ParagraphStyle(fontName='Helvetica-Bold', fontSize=14, name='TOCHeading1', leftIndent=20, firstLineIndent=-20, spaceBefore=5, leading=16),
-            ParagraphStyle(fontName='Helvetica', fontSize=12, name='TOCHeading2', leftIndent=40, firstLineIndent=-20, spaceBefore=0, leading=14),
-        ]
-
-        # --- Outline/bookmark support ---
         outline_entries = []
+
+        class MyDocTemplate(SimpleDocTemplate):
+            def __init__(self, *args, outline_entries=None, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.outline_entries = outline_entries or []
+                self._outline_idx = 0
+
+            def afterFlowable(self, flowable):
+                if hasattr(flowable, 'getPlainText'):
+                    text = flowable.getPlainText()
+                    if self._outline_idx < len(self.outline_entries):
+                        title, level, section_num = self.outline_entries[self._outline_idx]
+                        if title in text:
+                            bookmark_name = f"section_{section_num.replace('.', '_')}"
+                            self.canv.bookmarkPage(bookmark_name)
+                            self.canv.addOutlineEntry(title, bookmark_name, level=level, closed=False)
+                            self._outline_idx += 1
 
         def render_page(page, level=0, sec_prefix=[]):
             if len(sec_prefix) <= level:
@@ -289,18 +302,11 @@ class Dashboard:
                 sec_prefix[level] += 1
                 sec_prefix = sec_prefix[:level+1]
             section_num = ".".join(str(n) for n in sec_prefix)
-            # Save outline info for afterFlowable
             outline_entries.append((f"{section_num} {page.title}", level, section_num))
-            if level == 0:
-                style = styles['SectionTitle']
-            else:
-                style = styles['SubSectionTitle']
-            # Add a unique bookmark name
+            style = styles['Heading1'] if level == 0 else styles['Heading2']
             bookmark_name = f"section_{section_num.replace('.', '_')}"
             para = Paragraph(f'<a name="{bookmark_name}"/>{section_num} {page.title}', style)
             story.append(para)
-            if include_toc:
-                toc.addEntry(level, f"{section_num} {page.title}", None)
             story.append(Spacer(1, 12))
 
             def render_elements(elements):
@@ -338,7 +344,6 @@ class Dashboard:
                             import plotly.io as pio
                             if not isinstance(fig, go.Figure):
                                 raise ValueError("add_plot must be called with a plotly.graph_objects.Figure")
-                            import tempfile
                             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
                                 fig.write_image(tmpfile.name, width=500, height=300, scale=2)
                                 with open(tmpfile.name, "rb") as imgf:
@@ -368,25 +373,14 @@ class Dashboard:
             if level == 0:
                 story.append(PageBreak())
 
-        if include_toc:
-            story.append(Paragraph("Table of Contents", styles['Title']))
-            story.append(toc)
-            story.append(PageBreak())
-
         for page in self.pages:
             render_page(page)
 
-        # --- afterFlowable callback for PDF outline ---
-        def after_flowable(flowable):
-            # Only Paragraphs with anchor/bookmark
-            if hasattr(flowable, 'getPlainText'):
-                text = flowable.getPlainText()
-                for title, level, section_num in outline_entries:
-                    if title in text:
-                        bookmark_name = f"section_{section_num.replace('.', '_')}"
-                        # Add outline entry and bookmark
-                        doc.canv.bookmarkPage(bookmark_name)
-                        doc.canv.addOutlineEntry(title, bookmark_name, level=level, closed=False)
-                        break
+        doc = MyDocTemplate(
+            output_path,
+            pagesize=page_size,
+            rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72,
+            outline_entries=outline_entries
+        )
 
-        doc.build(story, afterFlowable=after_flowable)
+        doc.multiBuild(story)
