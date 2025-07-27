@@ -1,4 +1,4 @@
-name: Publish Tutorial
+name: Publish Tutorial and Package
 
 on:
   push:
@@ -6,8 +6,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build-publish:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -20,6 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -e .
+          pip install build twine
           pip install plotly pandas numpy dominate
 
       - name: Build tutorial
@@ -30,4 +32,39 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./tutorial_output
-          
+
+      - name: Increment version
+        id: increment_version
+        run: |
+          YEAR=$(date +%Y)
+          CURRENT_VERSION=$(grep -oP '(?<=version = ")[^"]+' pyproject.toml)
+          CURRENT_YEAR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+          CURRENT_NUMBER=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+
+          if [ "$CURRENT_YEAR" = "$YEAR" ]; then
+            NEW_NUMBER=$((CURRENT_NUMBER + 1))
+          else
+            NEW_NUMBER=1
+          fi
+
+          NEW_VERSION="$YEAR.$NEW_NUMBER"
+          sed -i "s/version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" pyproject.toml
+
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit new version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml
+          git commit -m "Increment version to ${{ steps.increment_version.outputs.new_version }}"
+          git push
+
+      - name: Build distribution
+        run: python -m build
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*

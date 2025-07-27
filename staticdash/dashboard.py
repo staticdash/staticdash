@@ -188,7 +188,7 @@ class Dashboard:
             else:
                 a(page.title, cls=link_classes, href=page_href)
 
-    def publish(self, output_dir="output"):
+    def publish(self, output_dir="output", include_title_page=False, author=None, affiliation=None):
         output_dir = os.path.abspath(output_dir)
         pages_dir = os.path.join(output_dir, "pages")
         downloads_dir = os.path.join(output_dir, "downloads")
@@ -250,6 +250,17 @@ class Dashboard:
                     a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
             with div(id="content"):
                 with div(cls="content-inner"):
+                    # Add title page if requested
+                    if include_title_page:
+                        with div(cls="title-page"):
+                            h1(self.title, cls="title")
+                            if author:
+                                p(f"Author: {author}", cls="author")
+                            if affiliation:
+                                p(f"Affiliation: {affiliation}", cls="affiliation")
+                            p(f"Date: {pd.Timestamp.now().strftime('%B %d, %Y')}", cls="date")
+                            hr()
+                    # Render the first page's content
                     for el in self.pages[0].render(0, downloads_dir=downloads_dir, relative_prefix=""):
                         div(el)
 
