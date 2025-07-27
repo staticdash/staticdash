@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 # --- 1. Create a Dashboard ---
-dashboard = Dashboard("Demo: Nested Sidebar", page_width=900)
+dashboard = Dashboard("Staticdash Tutorial", page_width=900)
 
 # --- 2. Introduction Page ---
 page_intro = Page("intro", "Intro", page_width=800)
