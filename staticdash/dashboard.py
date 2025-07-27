@@ -188,7 +188,7 @@ class Dashboard:
             else:
                 a(page.title, cls=link_classes, href=page_href)
 
-    def publish(self, output_dir="output", include_title_page=False, author=None, affiliation=None):
+    def publish(self, output_dir="output"):
         output_dir = os.path.abspath(output_dir)
         pages_dir = os.path.join(output_dir, "pages")
         downloads_dir = os.path.join(output_dir, "downloads")
@@ -250,24 +250,13 @@ class Dashboard:
                     a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
             with div(id="content"):
                 with div(cls="content-inner"):
-                    # Add title page if requested
-                    if include_title_page:
-                        with div(cls="title-page"):
-                            h1(self.title, cls="title")
-                            if author:
-                                p(f"Author: {author}", cls="author")
-                            if affiliation:
-                                p(f"Affiliation: {affiliation}", cls="affiliation")
-                            p(f"Date: {pd.Timestamp.now().strftime('%B %d, %Y')}", cls="date")
-                            hr()
-                    # Render the first page's content
                     for el in self.pages[0].render(0, downloads_dir=downloads_dir, relative_prefix=""):
                         div(el)
 
         with open(os.path.join(output_dir, "index.html"), "w") as f:
             f.write(str(index_doc))
 
-    def publish_pdf(self, output_path="dashboard_report.pdf", pagesize="A4", include_toc=True):
+    def publish_pdf(self, output_path="dashboard_report.pdf", pagesize="A4", include_toc=True, include_title_page=False, author=None, affiliation=None):
         from reportlab.lib.pagesizes import A4, letter
         page_size = A4 if pagesize.upper() == "A4" else letter
 
@@ -343,7 +332,6 @@ class Dashboard:
                                 ('FONTSIZE', (0, 0), (-1, 0), 11),
                                 ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
                                 ('TOPPADDING', (0, 0), (-1, 0), 10),
-                                # Zebra stripes for rows (alternate row coloring)
                                 ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
                                 ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#B0B8C1")),
                                 ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
@@ -353,11 +341,6 @@ class Dashboard:
                                 ('TOPPADDING', (0, 1), (-1, -1), 6),
                                 ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
                             ]))
-                            for row in range(1, len(data)):
-                                if row % 2 == 0:
-                                    t.setStyle(TableStyle([
-                                        ('BACKGROUND', (0, row), (-1, row), colors.HexColor("#F5F7FA")),
-                                    ]))
                             story.append(t)
                             story.append(Spacer(1, 12))
                         except Exception:
@@ -404,6 +387,16 @@ class Dashboard:
 
             if level == 0:
                 story.append(PageBreak())
+
+        # Add title page if requested
+        if include_title_page:
+            story.append(Paragraph(self.title, styles['Heading1']))
+            if author:
+                story.append(Paragraph(f"Author: {author}", normal_style))
+            if affiliation:
+                story.append(Paragraph(f"Affiliation: {affiliation}", normal_style))
+            story.append(Paragraph(f"Date: {pd.Timestamp.now().strftime('%B %d, %Y')}", normal_style))
+            story.append(PageBreak())
 
         for page in self.pages:
             render_page(page)

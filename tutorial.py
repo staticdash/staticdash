@@ -241,4 +241,9 @@ dashboard.add_page(about)
 
 # --- Export ---
 dashboard.publish(output_dir="tutorial_output")
-dashboard.publish_pdf("my_report.pdf", pagesize="A4", include_toc=True)
+dashboard.publish_pdf(
+    output_path="dashboard_report.pdf",
+    include_title_page=True,
+    author="Brian Day",
+    affiliation="StaticDash Inc."
+)
