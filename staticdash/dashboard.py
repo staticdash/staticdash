@@ -260,6 +260,9 @@ class Dashboard:
         from reportlab.lib.pagesizes import A4, letter
         page_size = A4 if pagesize.upper() == "A4" else letter
 
+        import plotly.io as pio
+        pio.kaleido.scope.default_format = "png"  # Ensure Kaleido is used
+
         styles = getSampleStyleSheet()
         styles['Heading1'].fontSize = 18
         styles['Heading1'].leading = 22
@@ -349,22 +352,19 @@ class Dashboard:
                         fig = content
                         try:
                             import plotly.graph_objects as go
-                            import plotly.io as pio
                             if not isinstance(fig, go.Figure):
                                 raise ValueError("add_plot must be called with a plotly.graph_objects.Figure")
-                            # Set larger figure size and higher scale (DPI)
                             fig.update_layout(
-                                margin=dict(l=10, r=10, t=30, b=30),  # Tight margins
-                                width=900,  # Larger width in pixels
-                                height=540  # Larger height in pixels
+                                margin=dict(l=10, r=10, t=30, b=30),
+                                width=900,
+                                height=540
                             )
                             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
-                                fig.write_image(tmpfile.name, width=900, height=540, scale=3)  # scale=3 for higher DPI
+                                fig.write_image(tmpfile.name, width=900, height=540, scale=3, format="png", engine="kaleido")
                                 with open(tmpfile.name, "rb") as imgf:
                                     img_bytes = imgf.read()
                                 img_buf = io.BytesIO(img_bytes)
                                 story.append(Spacer(1, 8))
-                                # Make the image take up more space in the PDF (7x4.2 inches)
                                 story.append(Image(img_buf, width=6*inch, height=3.6*inch))
                                 story.append(Spacer(1, 12))
                             os.unlink(tmpfile.name)
@@ -388,7 +388,6 @@ class Dashboard:
             if level == 0:
                 story.append(PageBreak())
 
-        # Add title page if requested
         if include_title_page:
             story.append(Paragraph(self.title, styles['Heading1']))
             if author:
