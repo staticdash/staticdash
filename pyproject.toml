@@ -16,7 +16,8 @@ dependencies = [
     "plotly",
     "pandas",
     "dominate",
-    "reportlab"
+    "reportlab",
+    "kaleido"
 ]
 
 [tool.setuptools]
