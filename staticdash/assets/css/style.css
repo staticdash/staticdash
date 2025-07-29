@@ -341,7 +341,7 @@ table, .syntax-block, pre {
 
 /* When open, show content */
 .sidebar-group.open > .sidebar-children {
-  max-height: 500px; /* or a value big enough for your content */
+  max-height: none;
 }
 
 /* Enable transition only after page load */
