@@ -292,7 +292,7 @@ class Dashboard:
                     text = flowable.getPlainText()
                     if self._outline_idx < len(self.outline_entries):
                         title, level, section_num = self.outline_entries[self._outline_idx]
-                        if title in text:
+                        if text.strip() == title.strip():
                             bookmark_name = f"section_{section_num.replace('.', '_')}"
                             self.canv.bookmarkPage(bookmark_name)
                             self.canv.addOutlineEntry(title, bookmark_name, level=level, closed=False)
