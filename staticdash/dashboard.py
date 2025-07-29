@@ -295,7 +295,6 @@ class Dashboard:
                     if self._outline_idx < len(self.outline_entries):
                         expected_title, level, section_num = self.outline_entries[self._outline_idx]
                         expected = expected_title.strip()
-                        print(f"[DEBUG] Matching Flowable: '{text}' == '{expected}'?")
                         if text == expected:
                             bookmark_name = f"section_{section_num.replace('.', '_')}"
                             self.canv.bookmarkPage(bookmark_name)
@@ -404,9 +403,6 @@ class Dashboard:
         for page in self.pages:
             render_page(page)
 
-        print("\n[PDF OUTLINE ENTRIES]")
-        for idx, (title, level, section_num) in enumerate(outline_entries):
-            print(f"{idx+1:2d}. {'  ' * level}{section_num} -> {title}")
 
         doc = MyDocTemplate(
             output_path,
