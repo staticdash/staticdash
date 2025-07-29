@@ -383,6 +383,7 @@ class Dashboard:
             render_elements(page.elements)
 
             for child in getattr(page, "children", []):
+                story.append(PageBreak())
                 render_page(child, level=level+1, sec_prefix=sec_prefix.copy())
 
             if level == 0:
