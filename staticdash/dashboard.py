@@ -361,7 +361,7 @@ class Dashboard:
                                 raise ValueError("add_plot must be called with a plotly.graph_objects.Figure")
                             fig.update_layout(margin=dict(l=10, r=10, t=30, b=30), width=900, height=540)
                             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
-                                fig.write_image(tmpfile.name, width=900, height=540, scale=3, format="png", engine="kaleido")
+                                fig.write_image(tmpfile.name, width=600, height=360, scale=2, format="png", engine="kaleido")
                                 with open(tmpfile.name, "rb") as imgf:
                                     img_bytes = imgf.read()
                                 img_buf = io.BytesIO(img_bytes)
