@@ -261,7 +261,7 @@ class Dashboard:
         page_size = A4 if pagesize.upper() == "A4" else letter
 
         import plotly.io as pio
-        pio.kaleido.scope.default_format = "png"  # Ensure Kaleido is used
+        pio.kaleido.scope.default_format = "png"
 
         styles = getSampleStyleSheet()
         styles['Heading1'].fontSize = 18
@@ -280,22 +280,26 @@ class Dashboard:
 
         story = []
         outline_entries = []
+        heading_paragraphs = []
 
         class MyDocTemplate(SimpleDocTemplate):
-            def __init__(self, *args, outline_entries=None, **kwargs):
+            def __init__(self, *args, outline_entries=None, headings=None, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.outline_entries = outline_entries or []
+                self.headings = headings or []
                 self._outline_idx = 0
 
             def afterFlowable(self, flowable):
                 if hasattr(flowable, 'getPlainText'):
-                    text = flowable.getPlainText()
+                    text = flowable.getPlainText().strip()
                     if self._outline_idx < len(self.outline_entries):
-                        title, level, section_num = self.outline_entries[self._outline_idx]
-                        if text.strip() == title.strip():
+                        expected_title, level, section_num = self.outline_entries[self._outline_idx]
+                        expected = expected_title.strip()
+                        print(f"[DEBUG] Matching Flowable: '{text}' == '{expected}'?")
+                        if text == expected:
                             bookmark_name = f"section_{section_num.replace('.', '_')}"
                             self.canv.bookmarkPage(bookmark_name)
-                            self.canv.addOutlineEntry(title, bookmark_name, level=level, closed=False)
+                            self.canv.addOutlineEntry(expected_title, bookmark_name, level=level, closed=False)
                             self._outline_idx += 1
 
         def render_page(page, level=0, sec_prefix=[]):
@@ -305,10 +309,12 @@ class Dashboard:
                 sec_prefix[level] += 1
                 sec_prefix = sec_prefix[:level+1]
             section_num = ".".join(str(n) for n in sec_prefix)
-            outline_entries.append((f"{section_num} {page.title}", level, section_num))
+            section_title = f"{section_num} {page.title}"
+            outline_entries.append((section_title, level, section_num))
             style = styles['Heading1'] if level == 0 else styles['Heading2']
             bookmark_name = f"section_{section_num.replace('.', '_')}"
-            para = Paragraph(f'<a name="{bookmark_name}"/>{section_num} {page.title}', style)
+            para = Paragraph(f'<a name="{bookmark_name}"/>{section_title}', style)
+            heading_paragraphs.append(para)
             story.append(para)
             story.append(Spacer(1, 12))
 
@@ -328,7 +334,7 @@ class Dashboard:
                             data = [df.columns.tolist()] + df.values.tolist()
                             t = Table(data, repeatRows=1)
                             t.setStyle(TableStyle([
-                                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#222C36")),  # dark header
+                                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#222C36")),
                                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                                 ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
@@ -354,11 +360,7 @@ class Dashboard:
                             import plotly.graph_objects as go
                             if not isinstance(fig, go.Figure):
                                 raise ValueError("add_plot must be called with a plotly.graph_objects.Figure")
-                            fig.update_layout(
-                                margin=dict(l=10, r=10, t=30, b=30),
-                                width=900,
-                                height=540
-                            )
+                            fig.update_layout(margin=dict(l=10, r=10, t=30, b=30), width=900, height=540)
                             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
                                 fig.write_image(tmpfile.name, width=900, height=540, scale=3, format="png", engine="kaleido")
                                 with open(tmpfile.name, "rb") as imgf:
@@ -401,11 +403,16 @@ class Dashboard:
         for page in self.pages:
             render_page(page)
 
+        print("\n[PDF OUTLINE ENTRIES]")
+        for idx, (title, level, section_num) in enumerate(outline_entries):
+            print(f"{idx+1:2d}. {'  ' * level}{section_num} -> {title}")
+
         doc = MyDocTemplate(
             output_path,
             pagesize=page_size,
             rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72,
-            outline_entries=outline_entries
+            outline_entries=outline_entries,
+            headings=heading_paragraphs
         )
 
         doc.multiBuild(story)
