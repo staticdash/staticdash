@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "staticdash"
-version = "2025.7"
+version = "2025.8"
 description = "A lightweight static HTML dashboard generator with Plotly and pandas support."
 authors = [
     { name = "Brian Day", email = "brian.day1@gmail.com" }
