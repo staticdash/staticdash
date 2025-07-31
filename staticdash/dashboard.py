@@ -398,12 +398,19 @@ class Dashboard:
                 story.append(PageBreak())
 
         if include_title_page:
-            story.append(Paragraph(self.title, styles['Heading1']))
+            story.append(Spacer(1, 120))
+            # Title, centered and bold
+            story.append(Paragraph(f"<b>{self.title}</b>", styles['Title']))
+            story.append(Spacer(1, 48))
+            # Centered info block (no labels)
+            info_lines = []
             if author:
-                story.append(Paragraph(f"Author: {author}", normal_style))
+                info_lines.append(str(author))
             if affiliation:
-                story.append(Paragraph(f"Affiliation: {affiliation}", normal_style))
-            story.append(Paragraph(f"Date: {pd.Timestamp.now().strftime('%B %d, %Y')}", normal_style))
+                info_lines.append(str(affiliation))
+            info_lines.append(pd.Timestamp.now().strftime('%B %d, %Y'))
+            info_html = "<br/>".join(info_lines)
+            story.append(Paragraph(f'<para align="center">{info_html}</para>', styles['Normal']))
             story.append(PageBreak())
 
         for page in self.pages:
