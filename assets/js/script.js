@@ -85,6 +85,25 @@ document.addEventListener("DOMContentLoaded", () => {
     return link ? link.getAttribute('href') : null;
   }
 
+  function saveSidebarState() {
+    const openGroups = Array.from(document.querySelectorAll('.sidebar-group.open'))
+      .map(getGroupSlug)
+      .filter(Boolean);
+    localStorage.setItem("sidebar-open-groups", JSON.stringify(openGroups));
+  }
+
+  function restoreSidebarState() {
+    const openGroups = JSON.parse(localStorage.getItem("sidebar-open-groups") || "[]");
+    document.querySelectorAll('.sidebar-group').forEach(group => {
+      const slug = getGroupSlug(group);
+      if (slug && openGroups.includes(slug)) {
+        group.classList.add('open');
+      } else {
+        group.classList.remove('open');
+      }
+    });
+  }
+
   // Restore open groups from localStorage
   const openGroups = JSON.parse(localStorage.getItem("sidebar-open-groups") || "[]");
   document.querySelectorAll('.sidebar-group').forEach(group => {
@@ -102,13 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const group = parent.closest('.sidebar-group');
         if (group) {
           group.classList.toggle('open');
-          // Save open groups to localStorage
-          const allGroups = Array.from(document.querySelectorAll('.sidebar-group'));
-          const open = allGroups
-            .filter(g => g.classList.contains('open'))
-            .map(getGroupSlug)
-            .filter(Boolean);
-          localStorage.setItem("sidebar-open-groups", JSON.stringify(open));
+          saveSidebarState();
         }
       }
     });
@@ -131,4 +144,56 @@ document.addEventListener("DOMContentLoaded", () => {
   setTimeout(() => {
     document.body.classList.add("sidebar-animate");
   }, 0);
+
+  // --- Sidebar collapse/expand memory ---
+  function saveSidebarState() {
+    const expanded = [];
+    document.querySelectorAll('.sidebar-group .sidebar-children').forEach(el => {
+      if (el.classList.contains('expanded')) {
+        // Use parent page slug as key
+        const parent = el.parentElement.querySelector('.sidebar-parent, .nav-link');
+        if (parent && parent.getAttribute('href')) {
+          expanded.push(parent.getAttribute('href'));
+        }
+      }
+    });
+    localStorage.setItem('sidebarExpanded', JSON.stringify(expanded));
+  }
+
+  function restoreSidebarState() {
+    const expanded = JSON.parse(localStorage.getItem('sidebarExpanded') || '[]');
+    document.querySelectorAll('.sidebar-group').forEach(group => {
+      const parent = group.querySelector('.sidebar-parent, .nav-link');
+      const children = group.querySelector('.sidebar-children');
+      if (parent && children) {
+        if (expanded.includes(parent.getAttribute('href'))) {
+          children.classList.add('expanded');
+        } else {
+          children.classList.remove('expanded');
+        }
+      }
+    });
+  }
+
+  restoreSidebarState();
+
+  document.querySelectorAll('.sidebar-group .sidebar-parent, .sidebar-group .nav-link').forEach(parent => {
+    parent.addEventListener('click', function(e) {
+      // Only toggle if arrow or parent link is clicked
+      if (e.target.classList.contains('sidebar-arrow') || e.currentTarget === e.target) {
+        const group = parent.closest('.sidebar-group');
+        const children = group.querySelector('.sidebar-children');
+        if (children) {
+          children.classList.toggle('expanded');
+          saveSidebarState();
+        }
+      }
+    });
+  });
 });
+
+/* CSS */
+/* Add this CSS to handle the rotation of the arrow icon */
+body.sidebar-animate .sidebar-group.open .sidebar-arrow {
+  transform: rotate(90deg);
+}
