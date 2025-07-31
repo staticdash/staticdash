@@ -201,6 +201,7 @@ class Dashboard:
 
         def write_page(page):
             doc = document(title=page.title)
+            effective_width = page.page_width or self.page_width or 900
             with doc.head:
                 doc.head.add(link(rel="stylesheet", href="../assets/css/style.css"))
                 doc.head.add(script(type="text/javascript", src="../assets/js/script.js"))
@@ -209,6 +210,8 @@ class Dashboard:
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"))
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"))
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"))
+                # Inject dynamic page width
+                doc.head.add(raw_util(f"<style>.content-inner {{ max-width: {effective_width}px !important; }}</style>"))
             with doc:
                 with div(id="sidebar"):
                     a(self.title, href="../index.html", cls="sidebar-title")
@@ -227,7 +230,9 @@ class Dashboard:
         for page in self.pages:
             write_page(page)
 
+        # Index page
         index_doc = document(title=self.title)
+        effective_width = self.pages[0].page_width or self.page_width or 900
         with index_doc.head:
             index_doc.head.add(link(rel="stylesheet", href="assets/css/style.css"))
             index_doc.head.add(script(type="text/javascript", src="assets/js/script.js"))
@@ -241,7 +246,8 @@ class Dashboard:
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"))
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"))
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"))
-
+            # Inject dynamic page width
+            index_doc.head.add(raw_util(f"<style>.content-inner {{ max-width: {effective_width}px !important; }}</style>"))
         with index_doc:
             with div(id="sidebar"):
                 a(self.title, href="index.html", cls="sidebar-title")
