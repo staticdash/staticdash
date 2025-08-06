@@ -15,6 +15,8 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 import io
 import tempfile
+import matplotlib.pyplot as plt
+import io, base64
 
 class AbstractPage:
     def __init__(self):
@@ -75,7 +77,22 @@ class Page(AbstractPage):
                 elem = header_tag(text)
             elif kind == "plot":
                 fig = content
-                elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})))
+                # Plotly support (existing)
+                if hasattr(fig, "to_html"):
+                    elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})))
+                # Matplotlib support
+                else:
+                    try:
+                        buf = io.BytesIO()
+                        fig.savefig(buf, format="png", bbox_inches="tight")
+                        buf.seek(0)
+                        img_base64 = base64.b64encode(buf.read()).decode("utf-8")
+                        buf.close()
+                        elem = div(
+                            raw_util(f'<img src="data:image/png;base64,{img_base64}" style="max-width:100%;">')
+                        )
+                    except Exception as e:
+                        elem = div(f"Matplotlib figure could not be rendered: {e}")
             elif kind == "table":
                 df = content
                 html_table = df.to_html(classes="table-hover table-striped", index=False, border=0, table_id=f"table-{index}", escape=False)
@@ -124,7 +141,24 @@ class MiniPage(AbstractPage):
                 elem = header_tag(text)
             elif kind == "plot":
                 fig = content
-                elem = raw_util(fig.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True}))
+                # Plotly support (existing)
+                if hasattr(fig, "to_html"):
+                    elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})))
+                # Matplotlib support
+                else:
+                    try:
+                        import matplotlib.pyplot as plt
+                        import io, base64
+                        buf = io.BytesIO()
+                        fig.savefig(buf, format="png", bbox_inches="tight")
+                        buf.seek(0)
+                        img_base64 = base64.b64encode(buf.read()).decode("utf-8")
+                        buf.close()
+                        elem = div(
+                            raw_util(f'<img src="data:image/png;base64,{img_base64}" style="max-width:100%;">')
+                        )
+                    except Exception as e:
+                        elem = div(f"Matplotlib figure could not be rendered: {e}")
             elif kind == "table":
                 df = content
                 html_table = df.to_html(classes="table-hover table-striped", index=False, border=0, table_id=f"table-{index}", escape=False)
@@ -363,18 +397,53 @@ class Dashboard:
                         fig = content
                         try:
                             import plotly.graph_objects as go
-                            if not isinstance(fig, go.Figure):
-                                raise ValueError("add_plot must be called with a plotly.graph_objects.Figure")
-                            fig.update_layout(margin=dict(l=10, r=10, t=30, b=30), width=900, height=540)
-                            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
-                                fig.write_image(tmpfile.name, width=600, height=360, scale=2, format="png", engine="kaleido")
-                                with open(tmpfile.name, "rb") as imgf:
-                                    img_bytes = imgf.read()
-                                img_buf = io.BytesIO(img_bytes)
+                            import matplotlib.figure
+                            import io
+                            from reportlab.platypus import Image
+
+                            # Plotly support
+                            if isinstance(fig, go.Figure):
+                                # Configure the figure layout for PDF rendering
+                                fig.update_layout(
+                                    margin=dict(l=10, r=10, t=30, b=30),
+                                    width=900,
+                                    height=540
+                                )
+
+                                # Use kaleido to export the figure as a PNG
+                                png_bytes = fig.to_image(format="png", width=900, height=540, engine="kaleido")
+
+                                # Wrap the PNG bytes in a BytesIO buffer
+                                img_buf = io.BytesIO(png_bytes)
+
+                                # Add the image to the PDF story
                                 story.append(Spacer(1, 8))
-                                story.append(Image(img_buf, width=6*inch, height=3.6*inch))
+                                story.append(Image(img_buf, width=6 * inch, height=3.6 * inch))
                                 story.append(Spacer(1, 12))
-                            os.unlink(tmpfile.name)
+
+                            # Matplotlib support
+                            elif isinstance(fig, matplotlib.figure.Figure):
+                                buf = io.BytesIO()
+                                # Save the figure with higher DPI for better quality
+                                fig.savefig(buf, format="png", bbox_inches="tight", dpi=300)
+                                buf.seek(0)
+
+                                # Calculate aspect ratio
+                                fig_width, fig_height = fig.get_size_inches()
+                                aspect_ratio = fig_height / fig_width
+
+                                # Set width and calculate height based on aspect ratio
+                                pdf_width = 6 * inch
+                                pdf_height = pdf_width * aspect_ratio
+
+                                # Add the image to the PDF story
+                                story.append(Spacer(1, 8))
+                                story.append(Image(buf, width=pdf_width, height=pdf_height))
+                                story.append(Spacer(1, 12))
+
+                            else:
+                                raise ValueError("add_plot must be called with a plotly.graph_objects.Figure or matplotlib.figure.Figure")
+
                         except Exception as e:
                             story.append(Paragraph(f"Plot rendering not supported in PDF: {e}", normal_style))
                     elif kind == "syntax":

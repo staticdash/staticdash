@@ -2,6 +2,7 @@ from staticdash import Page, Dashboard
 from staticdash.dashboard import MiniPage
 import plotly.express as px
 import pandas as pd
+import matplotlib.pyplot as plt
 import numpy as np
 
 # --- 1. Create a Dashboard ---
@@ -52,12 +53,15 @@ page_headers.add_header("Header Level 4", level=4)
 page_headers.add_text("This is a paragraph of text. Headers help organize your dashboard and provide structure.")
 dashboard.add_page(page_headers)
 
-# --- 5. Plotly Figures ---
-df = px.data.gapminder().query("year == 2007")
-fig = px.scatter(df, x="gdpPercap", y="lifeExp", size="pop", color="continent",
-                 hover_name="country", log_x=True, size_max=60, title="GDP vs Life Expectancy (2007)")
+# --- 5. Plotly and Matplotlib Figures ---
+page_plot = Page("plots", "Plotly and Matplotlib Figures")
 
-page_plot = Page("plots", "Plotly Figures")
+# Plotly Example
+df = px.data.gapminder().query("year == 2007")
+fig_plotly = px.scatter(
+    df, x="gdpPercap", y="lifeExp", size="pop", color="continent",
+    hover_name="country", log_x=True, size_max=60, title="Plotly: GDP vs Life Expectancy (2007)"
+)
 page_plot.add_text(
     "Add interactive Plotly figures to your dashboard. Just pass a Plotly figure to `add_plot`."
 )
@@ -69,7 +73,39 @@ fig = px.scatter(df, x="gdpPercap", y="lifeExp", size="pop", color="continent",
 page.add_plot(fig)''',
     language="python"
 )
-page_plot.add_plot(fig)
+page_plot.add_plot(fig_plotly)
+
+# Matplotlib Example
+
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+fig_matplotlib, ax = plt.subplots()
+ax.plot(x, y, label="Sine Wave")
+ax.set_title("Matplotlib: Sine Wave")
+ax.set_xlabel("X-axis")
+ax.set_ylabel("Y-axis")
+ax.legend()
+
+page_plot.add_text(
+    "You can also add static Matplotlib figures to your dashboard. Just pass a Matplotlib figure to `add_plot`."
+)
+page_plot.add_syntax(
+    '''import matplotlib.pyplot as plt
+import numpy as np
+
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+fig, ax = plt.subplots()
+ax.plot(x, y, label="Sine Wave")
+ax.set_title("Matplotlib: Sine Wave")
+ax.set_xlabel("X-axis")
+ax.set_ylabel("Y-axis")
+ax.legend()
+page.add_plot(fig)''',
+    language="python"
+)
+page_plot.add_plot(fig_matplotlib)
+
 dashboard.add_page(page_plot)
 
 # --- 6. Tables ---
