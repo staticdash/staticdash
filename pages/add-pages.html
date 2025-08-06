@@ -13,17 +13,11 @@
   <body>
     <div id="sidebar">
       <a class="sidebar-title" href="../index.html">Staticdash Tutorial</a>
-      <a class="nav-link" href="intro.html">Intro</a>
+      <a class="nav-link" href="intro.html">Introduction</a>
       <a class="nav-link active" href="add-pages.html">Adding Pages</a>
       <a class="nav-link" href="headers.html">Headers &amp; Text</a>
       <a class="nav-link" href="plots.html">Plotly and Matplotlib Figures</a>
       <a class="nav-link" href="tables.html">Tables</a>
-      <a class="nav-link" href="downloads.html">Download Buttons</a>
-      <a class="nav-link" href="minipage.html">MiniPages (Horizontal Rows)</a>
-      <a class="nav-link" href="minipage2.html">MiniPages: Mixed Content</a>
-      <a class="nav-link" href="syntax.html">Syntax Highlighted Code</a>
-      <a class="nav-link" href="combo.html">Combining Features</a>
-      <a class="nav-link" href="export.html">Export HTML</a>
       <div class="sidebar-group">
         <a class="nav-link sidebar-parent" href="main.html">
           <span class="sidebar-arrow">▶</span>Main Page
@@ -33,7 +27,6 @@
           <a class="nav-link" href="sub2.html">Subpage 2</a>
         </div>
       </div>
-      <a class="nav-link" href="about.html">About</a>
       <div id="sidebar-footer">
         <a href="https://pypi.org/project/staticdash/" target="_blank">Produced by staticdash</a>
       </div>
@@ -41,7 +34,9 @@
     <div id="content">
       <div class="content-inner">
         <div>
-          <div style="max-width: Nonepx; margin: 0 auto; width: 100%;">
+          <div style="max-width: Nonepx; margin: 0 auto; width: 100%; padding-top: 80px; padding-bottom: 80px;">
+            <div class="floating-header" style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;">Default Marking</div>
+            <div class="floating-footer" style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;">Default Marking</div>
             <h1>Adding Pages</h1>
             <p>A dashboard is made up of one or more **pages**. Each page gets a title, a unique slug, and any content you want. To add a page, create a `Page` object and use `dashboard.add_page(page)`.</p>
             <div class="syntax-block"><pre class="syntax-block"><code class="language-python">page = Page(&quot;overview&quot;, &quot;Overview&quot;)
