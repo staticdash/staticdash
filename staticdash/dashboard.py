@@ -467,33 +467,29 @@ class Dashboard:
             story.append(PageBreak())
 
         def render_page(page, level=0, sec_prefix=[]):
-            heading_style = styles['Heading1'] if level == 0 else styles['Heading2']
+            heading_style = styles.get(f'Heading{min(level + 1, 4)}', styles['Heading4'])
 
-            # Only add the page.title as a real heading if it's a top-level page
-            # if level == 0:
-            #     story.append(Paragraph(page.title, heading_style))
-            #     story.append(Spacer(1, 12))
+            # Remember where we started
+            content_start = len(story)
 
-            heading_style = styles['Heading1'] if level == 0 else styles['Heading2']
             story.append(Paragraph(page.title, heading_style))
             story.append(Spacer(1, 12))
 
-
             for kind, content, _ in page.elements:
-                if kind == "text":
-                    story.append(Paragraph(content, normal_style))
-                    story.append(Spacer(1, 8))
+                try:
+                    if kind == "text":
+                        story.append(Paragraph(content, normal_style))
+                        story.append(Spacer(1, 8))
 
-                elif kind == "header":
-                    text, lvl = content
-                    safe_lvl = max(1, min(lvl + 1, 4))  # Clamp to Heading1–Heading4
-                    style = styles[f'Heading{safe_lvl}']
-                    story.append(Paragraph(text, style))
-                    story.append(Spacer(1, 8))
+                    elif kind == "header":
+                        text, lvl = content
+                        safe_lvl = max(1, min(lvl + 1, 4))
+                        style = styles[f'Heading{safe_lvl}']
+                        story.append(Paragraph(text, style))
+                        story.append(Spacer(1, 8))
 
-                elif kind == "table":
-                    df = content
-                    try:
+                    elif kind == "table":
+                        df = content
                         data = [df.columns.tolist()] + df.values.tolist()
                         t = Table(data, repeatRows=1)
                         t.setStyle(TableStyle([
@@ -515,48 +511,59 @@ class Dashboard:
                         ]))
                         story.append(t)
                         story.append(Spacer(1, 12))
-                    except Exception:
-                        story.append(Paragraph("Table could not be rendered.", normal_style))
 
-                elif kind == "plot":
-                    fig = content
-                    try:
-                        if hasattr(fig, "savefig"):  # Matplotlib
-                            buf = io.BytesIO()
+                    elif kind == "plot":
+                        fig = content
+                        buf = io.BytesIO()
+                        if hasattr(fig, "savefig"):
                             fig.savefig(buf, format="png", bbox_inches="tight", dpi=300)
-                            buf.seek(0)
-                            story.append(Spacer(1, 8))
-                            story.append(Image(buf, width=6*inch, height=4.5*inch))
-                            story.append(Spacer(1, 12))
-                        elif hasattr(fig, "write_image"):  # Plotly
-                            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
-                                fig.write_image(tmpfile.name, width=600, height=360, scale=2)
-                                with open(tmpfile.name, "rb") as f:
-                                    story.append(Spacer(1, 8))
-                                    story.append(Image(io.BytesIO(f.read()), width=6*inch, height=3.6*inch))
-                                    story.append(Spacer(1, 12))
-                            os.unlink(tmpfile.name)
-                    except Exception as e:
-                        story.append(Paragraph(f"Plot rendering failed: {e}", normal_style))
+                        else:
+                            fig.write_image(buf, format="png", width=600, height=360, scale=2)
+                        buf.seek(0)
+                        story.append(Image(buf, width=6 * inch, height=4.5 * inch))
+                        story.append(Spacer(1, 12))
 
-                elif kind == "syntax":
-                    code, language = content
-                    from html import escape
-                    story.append(Paragraph(f"<b>Code ({language}):</b>", normal_style))
-                    story.append(Spacer(1, 4))
-                    code_html = escape(code).replace(" ", "&nbsp;").replace("\n", "<br/>")
-                    story.append(Paragraph(f"<font face='Courier'>{code_html}</font>", styles['CodeBlock']))
-                    story.append(Spacer(1, 12))
+                    elif kind == "syntax":
+                        code, language = content
+                        from html import escape
+                        story.append(Paragraph(f"<b>Code ({language}):</b>", normal_style))
+                        story.append(Spacer(1, 4))
+                        code_html = escape(code).replace(" ", "&nbsp;").replace("\n", "<br/>")
+                        story.append(Paragraph(f"<font face='Courier'>{code_html}</font>", styles['CodeBlock']))
+                        story.append(Spacer(1, 12))
 
-                elif kind == "minipage":
-                    render_page(content, level=level + 1, sec_prefix=sec_prefix)
+                    elif kind == "minipage":
+                        render_page(content, level=level + 1, sec_prefix=sec_prefix)
 
-            for child in page.children:
+                except Exception as e:
+                    story.append(Paragraph(f"Error rendering element: {e}", normal_style))
+
+
+            just_broke = False
+
+            for i, child in enumerate(page.children):
+                if i > 0 and not just_broke:
+                    story.append(PageBreak())
+
+                before = len(story)
+                render_page(child, level=level + 1, sec_prefix=sec_prefix + [i + 1])
+                after = len(story)
+
+                # Determine if child added a PageBreak
+                just_broke = isinstance(story[-1], PageBreak) if after > before else False
+
+
+            # Determine if anything meaningful was added
+            def has_meaningful_content(start_idx):
+                for elem in story[start_idx:]:
+                    if isinstance(elem, (Paragraph, Table, Image)):
+                        return True
+                return False
+
+            if not page.children and has_meaningful_content(content_start):
                 story.append(PageBreak())
-                render_page(child, level=level + 1, sec_prefix=sec_prefix + [1])
 
 
-            story.append(PageBreak())
 
         for page in self.pages:
             render_page(page)
