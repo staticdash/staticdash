@@ -9,7 +9,7 @@ import numpy as np
 dashboard = Dashboard(
     "Staticdash Tutorial",
     marking="Confidential - For Internal Use Only",
-    distribution="DISTRIBUTION STATEMENT A. Approved for public release. Adding additional sentences. Adding another. Hopefully this goes onto another line. Here's one more. Just to be safe."
+    distribution="DISTRIBUTION STATEMENT A. Approved for public release."
 )
 
 # --- 2. Introduction Page ---
