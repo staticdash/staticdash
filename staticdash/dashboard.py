@@ -88,8 +88,10 @@ class Page(AbstractPage):
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")
                         buf.close()
+                        # Center the image using a div with inline styles
                         elem = div(
-                            raw_util(f'<img src="data:image/png;base64,{img_base64}" style="max-width:100%;">')
+                            raw_util(f'<img src="data:image/png;base64,{img_base64}" style="max-width:100%;">'),
+                            style="display: flex; justify-content: center; align-items: center;"
                         )
                     except Exception as e:
                         elem = div(f"Matplotlib figure could not be rendered: {e}")
@@ -147,15 +149,15 @@ class MiniPage(AbstractPage):
                 # Matplotlib support
                 else:
                     try:
-                        import matplotlib.pyplot as plt
-                        import io, base64
                         buf = io.BytesIO()
                         fig.savefig(buf, format="png", bbox_inches="tight")
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")
                         buf.close()
+                        # Center the image using a div with inline styles
                         elem = div(
-                            raw_util(f'<img src="data:image/png;base64,{img_base64}" style="max-width:100%;">')
+                            raw_util(f'<img src="data:image/png;base64,{img_base64}" style="max-width:100%;">'),
+                            style="display: flex; justify-content: center; align-items: center;"
                         )
                     except Exception as e:
                         elem = div(f"Matplotlib figure could not be rendered: {e}")
