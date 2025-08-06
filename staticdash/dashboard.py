@@ -427,6 +427,7 @@ class Dashboard:
                         self.canv.bookmarkPage(key)
                         self.canv.addOutlineEntry(text, key, level=outline_level, closed=False)
 
+
                         self.notify('TOCEntry', (outline_level, text, self.page))
 
 
@@ -469,9 +470,14 @@ class Dashboard:
             heading_style = styles['Heading1'] if level == 0 else styles['Heading2']
 
             # Only add the page.title as a real heading if it's a top-level page
-            if level == 0:
-                story.append(Paragraph(page.title, heading_style))
-                story.append(Spacer(1, 12))
+            # if level == 0:
+            #     story.append(Paragraph(page.title, heading_style))
+            #     story.append(Spacer(1, 12))
+
+            heading_style = styles['Heading1'] if level == 0 else styles['Heading2']
+            story.append(Paragraph(page.title, heading_style))
+            story.append(Spacer(1, 12))
+
 
             for kind, content, _ in page.elements:
                 if kind == "text":
@@ -545,9 +551,10 @@ class Dashboard:
                 elif kind == "minipage":
                     render_page(content, level=level + 1, sec_prefix=sec_prefix)
 
-            # for child in getattr(page, "children", []):
-            #     story.append(PageBreak())
-            #     render_page(child, level=level + 2, sec_prefix=sec_prefix + [1])
+            for child in page.children:
+                story.append(PageBreak())
+                render_page(child, level=level + 1, sec_prefix=sec_prefix + [1])
+
 
             story.append(PageBreak())
 
