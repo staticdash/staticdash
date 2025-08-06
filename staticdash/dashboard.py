@@ -533,13 +533,18 @@ class Dashboard:
             story.append(PageBreak())
 
         def render_page(page, level=0, sec_prefix=[]):
+            # Generate section numbering like "1", "1.2", etc.
+            section_number = ".".join(map(str, sec_prefix)) 
+            heading_text = f"{section_number} {page.title}"
+
             heading_style = styles.get(f'Heading{min(level + 1, 4)}', styles['Heading4'])
+            story.append(Paragraph(heading_text, heading_style))
+            story.append(Spacer(1, 12))
+
 
             # Remember where we started
             content_start = len(story)
 
-            story.append(Paragraph(page.title, heading_style))
-            story.append(Spacer(1, 12))
 
             for kind, content, _ in page.elements:
                 try:
@@ -631,8 +636,8 @@ class Dashboard:
 
 
 
-        for page in self.pages:
-            render_page(page)
+        for i, page in enumerate(self.pages):
+            render_page(page, level=0, sec_prefix=[i + 1])
 
 
 
