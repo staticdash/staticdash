@@ -65,18 +65,40 @@ class Page(AbstractPage):
         effective_width = self.page_width or inherited_width
         elements = []
 
-        # Add floating header and footer for marking
+        # # Add floating header and footer for marking
+        # marking = self.marking or "Default Marking"
+        # elements.append(div(
+        #     marking,
+        #     cls="floating-header",
+        #     style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;"
+        # ))
+        # elements.append(div(
+        #     marking,
+        #     cls="floating-footer",
+        #     style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;"
+        # ))
+
+        # Add floating header and footer with optional distribution
         marking = self.marking or "Default Marking"
+        distribution = getattr(self, "distribution", None)
+
         elements.append(div(
             marking,
             cls="floating-header",
             style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;"
         ))
+
+        footer_block = []
+        if distribution:
+            footer_block.append(div(distribution, style="margin-bottom: 4px; font-size: 10pt;"))
+        footer_block.append(div(marking))
+
         elements.append(div(
-            marking,
+            *footer_block,
             cls="floating-footer",
             style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;"
         ))
+
 
         for kind, content, el_width in self.elements:
             style = ""
@@ -205,11 +227,12 @@ class MiniPage(AbstractPage):
         return row_div
 
 class Dashboard:
-    def __init__(self, title="Dashboard", page_width=900, marking=None):
+    def __init__(self, title="Dashboard", page_width=900, marking=None, distribution=None):
         self.title = title
         self.pages = []
         self.page_width = page_width
         self.marking = marking  # Dashboard-wide marking
+        self.distribution = distribution  # NEW: Distribution statement
 
     def add_page(self, page):
         self.pages.append(page)
@@ -431,17 +454,60 @@ class Dashboard:
                         self.notify('TOCEntry', (outline_level, text, self.page))
 
 
-
         def add_marking(canvas, doc, marking):
+            from reportlab.pdfbase.pdfmetrics import stringWidth
+
+            distribution = self.distribution
+            canvas.saveState()
+            canvas.setFont("Helvetica", 10)
+            width, height = doc.pagesize
+
+            line_height = 12
+            margin_y = 36
+
+            # Top of page marking
             if marking:
-                canvas.saveState()
-                canvas.setFont("Helvetica", 10)
-                width, height = doc.pagesize
-                text_width = canvas.stringWidth(marking, "Helvetica", 10)
-                x = (width - text_width) / 2
-                canvas.drawString(x, height - 36, marking)
-                canvas.drawString(x, 36, marking)
-                canvas.restoreState()
+                top_width = stringWidth(marking, "Helvetica", 10)
+                x_top = (width - top_width) / 2
+                canvas.drawString(x_top, height - margin_y, marking)
+
+            # Bottom of page — prepare to stack upward
+            y = margin_y
+
+            # First: bottom marking
+            if marking:
+                bot_width = stringWidth(marking, "Helvetica", 10)
+                x_bot = (width - bot_width) / 2
+                canvas.drawString(x_bot, y, marking)
+                y += line_height  # make room above
+
+            # Then: bottom distribution (above marking)
+            if distribution:
+                max_width = width - 144  # ~1" margins
+                words = distribution.split()
+                lines = []
+                current_line = []
+
+                for word in words:
+                    test_line = " ".join(current_line + [word])
+                    if stringWidth(test_line, "Helvetica", 10) <= max_width:
+                        current_line.append(word)
+                    else:
+                        lines.append(" ".join(current_line))
+                        current_line = [word]
+
+                if current_line:
+                    lines.append(" ".join(current_line))
+
+                # Draw top-down (above marking)
+                for line in reversed(lines):
+                    line_width = stringWidth(line, "Helvetica", 10)
+                    x = (width - line_width) / 2
+                    y += line_height
+                    canvas.drawString(x, y, line)
+
+            canvas.restoreState()
+
 
         if include_title_page:
             story.append(Spacer(1, 120))

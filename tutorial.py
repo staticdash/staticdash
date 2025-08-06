@@ -8,7 +8,8 @@ import numpy as np
 # --- 1. Create a Dashboard ---
 dashboard = Dashboard(
     "Staticdash Tutorial",
-    marking="Confidential - For Internal Use Only"
+    marking="Confidential - For Internal Use Only",
+    distribution="DISTRIBUTION STATEMENT A. Approved for public release. Adding additional sentences. Adding another. Hopefully this goes onto another line. Here's one more. Just to be safe."
 )
 
 # --- 2. Introduction Page ---
