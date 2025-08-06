@@ -582,9 +582,9 @@ class Dashboard:
                         fig = content
                         buf = io.BytesIO()
                         if hasattr(fig, "savefig"):
-                            fig.savefig(buf, format="png", bbox_inches="tight", dpi=300)
+                            fig.savefig(buf, format="png", bbox_inches="tight", dpi=600)
                         else:
-                            fig.write_image(buf, format="png", width=600, height=360, scale=2)
+                            fig.write_image(buf, format="png", width=800, height=600, scale=3)
                         buf.seek(0)
                         story.append(Image(buf, width=6 * inch, height=4.5 * inch))
                         story.append(Spacer(1, 12))
