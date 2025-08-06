@@ -56,7 +56,7 @@ class Page(AbstractPage):
         self.page_width = page_width
         self.marking = marking  # Page-specific marking
         self.children = []
-        self.add_header(title, level=1)
+        # self.add_header(title, level=1)
 
     def add_subpage(self, page):
         self.children.append(page)
@@ -395,16 +395,41 @@ class Dashboard:
                 self._outline_idx = 0
                 super().__init__(*args, **kwargs)
 
+
             def afterFlowable(self, flowable):
-                if hasattr(flowable, 'style') and hasattr(flowable, 'getPlainText'):
+                from reportlab.platypus import Paragraph
+                if isinstance(flowable, Paragraph):
                     style_name = flowable.style.name
-                    if style_name.startswith("Heading"):
-                        level = int(style_name.replace("Heading", ""))
-                        text = flowable.getPlainText().strip()
-                        key = f"heading_{uuid.uuid4().hex}"
+                    if style_name.startswith('Heading'):
+                        try:
+                            level = int(style_name.replace("Heading", ""))
+                        except ValueError:
+                            return  # Not a valid heading style
+
+                        # Convert to outline level (0 = H1, 1 = H2, etc.)
+                        outline_level = level - 1
+
+                        # Clamp max to 2 for PDF outline safety
+                        outline_level = max(0, min(outline_level, 2))
+
+                        # Prevent skipping levels: ensure intermediates exist
+                        # Track previous levels (add this as a class attribute if needed)
+                        if not hasattr(self, "_last_outline_level"):
+                            self._last_outline_level = -1
+
+                        if outline_level > self._last_outline_level + 1:
+                            outline_level = self._last_outline_level + 1  # prevent jump
+
+                        self._last_outline_level = outline_level
+
+                        text = flowable.getPlainText()
+                        key = 'heading_%s' % self.seq.nextf('heading')
                         self.canv.bookmarkPage(key)
-                        self.canv.addOutlineEntry(text, key, level=level-1, closed=False)
-                        self.notify('TOCEntry', (level, text, self.page))
+                        self.canv.addOutlineEntry(text, key, level=outline_level, closed=False)
+
+                        self.notify('TOCEntry', (outline_level, text, self.page))
+
+
 
         def add_marking(canvas, doc, marking):
             if marking:
@@ -442,8 +467,11 @@ class Dashboard:
 
         def render_page(page, level=0, sec_prefix=[]):
             heading_style = styles['Heading1'] if level == 0 else styles['Heading2']
-            story.append(Paragraph(page.title, heading_style))
-            story.append(Spacer(1, 12))
+
+            # Only add the page.title as a real heading if it's a top-level page
+            if level == 0:
+                story.append(Paragraph(page.title, heading_style))
+                story.append(Spacer(1, 12))
 
             for kind, content, _ in page.elements:
                 if kind == "text":
@@ -452,7 +480,8 @@ class Dashboard:
 
                 elif kind == "header":
                     text, lvl = content
-                    style = styles['Heading{}'.format(min(lvl + 1, 4))]
+                    safe_lvl = max(1, min(lvl + 1, 4))  # Clamp to Heading1–Heading4
+                    style = styles[f'Heading{safe_lvl}']
                     story.append(Paragraph(text, style))
                     story.append(Spacer(1, 8))
 
@@ -516,14 +545,16 @@ class Dashboard:
                 elif kind == "minipage":
                     render_page(content, level=level + 1, sec_prefix=sec_prefix)
 
-            for child in getattr(page, "children", []):
-                story.append(PageBreak())
-                render_page(child, level=level + 1, sec_prefix=sec_prefix + [1])
+            # for child in getattr(page, "children", []):
+            #     story.append(PageBreak())
+            #     render_page(child, level=level + 2, sec_prefix=sec_prefix + [1])
 
             story.append(PageBreak())
 
         for page in self.pages:
             render_page(page)
+
+
 
         doc = MyDocTemplate(
             output_path,
