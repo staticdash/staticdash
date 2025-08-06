@@ -22,6 +22,7 @@ class AbstractPage:
     def __init__(self):
         self.elements = []
 
+
     def add_header(self, text, level=1, width=None):
         if level not in (1, 2, 3, 4):
             raise ValueError("Header level must be 1, 2, 3, or 4")
@@ -212,6 +213,34 @@ class Dashboard:
 
     def add_page(self, page):
         self.pages.append(page)
+    
+    # def _track_outline(self, flowable):
+    #     """
+    #     Hook for collecting TOC entries and setting bookmarks.
+    #     """
+    #     from reportlab.platypus import Paragraph
+    #     if isinstance(flowable, Paragraph):
+    #         text = flowable.getPlainText()
+    #         style_name = flowable.style.name
+    #         if style_name.startswith("Heading"):
+    #             try:
+    #                 level = int(style_name.replace("Heading", ""))
+    #             except ValueError:
+    #                 return
+    #             key = f"bookmark_{uuid.uuid4().hex}"
+    #             flowable.canv.bookmarkPage(key)
+    #             flowable.canv.addOutlineEntry(text, key, level=level - 1, closed=False)
+    #             flowable._bookmarkName = key
+
+
+    def _track_outline(self, canvas, doc):
+        if hasattr(doc, '_last_heading'):
+            level, text = doc._last_heading
+            key = f"bookmark_{uuid.uuid4().hex}"
+            canvas.bookmarkPage(key)
+            canvas.addOutlineEntry(text, key, level=level - 1, closed=False)
+            del doc._last_heading
+
 
     def _render_sidebar(self, pages, prefix="", current_slug=None):
         for page in pages:
@@ -317,123 +346,157 @@ class Dashboard:
             f.write(str(index_doc))
 
     def publish_pdf(self, output_path="dashboard_report.pdf", pagesize="A4", include_title_page=False, title_page_marking=None, author=None, affiliation=None):
-        from reportlab.platypus import SimpleDocTemplate, Spacer, Paragraph, PageBreak, Image
-        from reportlab.lib.pagesizes import letter, A4
-        from reportlab.lib.styles import getSampleStyleSheet
-        from datetime import datetime
-        import io
+            from reportlab.platypus import SimpleDocTemplate, Spacer, Paragraph, PageBreak, Image
+            from reportlab.lib.pagesizes import letter, A4
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from datetime import datetime
+            import io
 
-        page_size = A4 if pagesize == "A4" else letter
-        styles = getSampleStyleSheet()
-        story = []
+            page_size = A4 if pagesize == "A4" else letter
+            styles = getSampleStyleSheet()
+            story = []
 
-        # Add title page
-        if include_title_page:
-            story.append(Spacer(1, 120))
-            story.append(Paragraph(f"<b>{self.title}</b>", styles['Title']))
-            story.append(Spacer(1, 48))
+            # Add title page
+            if include_title_page:
+                story.append(Spacer(1, 120))
+                story.append(Paragraph(f"<b>{self.title}</b>", styles['Title']))
+                story.append(Spacer(1, 48))
+                if author:
+                    story.append(Paragraph(f"<para align='center'>{author}</para>", styles['Normal']))
+                if affiliation:
+                    story.append(Paragraph(f"<para align='center'>{affiliation}</para>", styles['Normal']))
+                current_date = datetime.now().strftime("%B %d, %Y")
+                story.append(Paragraph(f"<para align='center'>{current_date}</para>", styles['Normal']))
+                story.append(PageBreak())
 
-            # Center author, affiliation, and date
-            if author:
-                story.append(Paragraph(f"<para align='center'>{author}</para>", styles['Normal']))
-            if affiliation:
-                story.append(Paragraph(f"<para align='center'>{affiliation}</para>", styles['Normal']))
-            current_date = datetime.now().strftime("%B %d, %Y")
-            story.append(Paragraph(f"<para align='center'>{current_date}</para>", styles['Normal']))
-
+            # Add Table of Contents
+            toc = TableOfContents()
+            toc.levelStyles = [
+                ParagraphStyle(name='TOCHeading1', fontSize=14, leftIndent=20, firstLineIndent=-20, spaceBefore=10, leading=16),
+                ParagraphStyle(name='TOCHeading2', fontSize=12, leftIndent=40, firstLineIndent=-20, spaceBefore=5, leading=12),
+                ParagraphStyle(name='TOCHeading3', fontSize=10, leftIndent=60, firstLineIndent=-20, spaceBefore=5, leading=10),
+            ]
+            story.append(Paragraph("Table of Contents", styles["Title"]))
+            story.append(toc)
             story.append(PageBreak())
 
-        # Add markings to the PDF
-        def add_marking(canvas, doc, marking):
-            if marking:
-                canvas.saveState()
-                canvas.setFont("Helvetica", 10)
-                page_width = doc.pagesize[0]
-                text_width = canvas.stringWidth(marking, "Helvetica", 10)
-                x_position = (page_width - text_width) / 2  # Center the marking
-                canvas.drawString(x_position, doc.pagesize[1] - 36, marking)  # Header
-                canvas.drawString(x_position, 36, marking)  # Footer
-                canvas.restoreState()
+            def add_marking(canvas, doc, marking):
+                if marking:
+                    canvas.saveState()
+                    canvas.setFont("Helvetica", 10)
+                    page_width = doc.pagesize[0]
+                    text_width = canvas.stringWidth(marking, "Helvetica", 10)
+                    x_position = (page_width - text_width) / 2
+                    canvas.drawString(x_position, doc.pagesize[1] - 36, marking)
+                    canvas.drawString(x_position, 36, marking)
+                    canvas.restoreState()
 
-        # Recursive function to render pages and subpages
-        def render_page(page):
-            # Render the current page
-            for kind, content, _ in page.elements:
-                if kind == "text":
-                    story.append(Paragraph(content, styles['Normal']))
-                    story.append(Spacer(1, 8))
-                elif kind == "header":
-                    text, level = content
-                    header_style = styles[f'Heading{min(level + 1, 4)}']
-                    story.append(Paragraph(text, header_style))
-                    story.append(Spacer(1, 8))
-                elif kind == "table":
-                    df = content
-                    try:
-                        data = [df.columns.tolist()] + df.values.tolist()
-                        t = Table(data, repeatRows=1)
-                        t.setStyle(TableStyle([
-                            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#222C36")),
-                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                            ('FONTSIZE', (0, 0), (-1, 0), 11),
-                            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-                            ('TOPPADDING', (0, 0), (-1, 0), 10),
-                            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
-                            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#B0B8C1")),
-                            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                            ('FONTSIZE', (0, 1), (-1, -1), 10),
-                            ('LEFTPADDING', (0, 0), (-1, -1), 6),
-                            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-                            ('TOPPADDING', (0, 1), (-1, -1), 6),
-                            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-                        ]))
-                        story.append(t)
-                        story.append(Spacer(1, 12))
-                    except Exception:
-                        story.append(Paragraph("Table could not be rendered.", styles['Normal']))
-                elif kind == "plot":
-                    fig = content
-                    try:
-                        # Handle Plotly figures
-                        if hasattr(fig, "to_image"):
-                            img_bytes = fig.to_image(format="png", width=800, height=600, scale=2)
-                            img_buffer = io.BytesIO(img_bytes)
-                            img = Image(img_buffer, width=6 * inch, height=4.5 * inch)
-                            story.append(img)
+            def render_page(page):
+                for kind, content, _ in page.elements:
+                    if kind == "text":
+                        story.append(Paragraph(content, styles['Normal']))
+                        story.append(Spacer(1, 8))
+
+                    elif kind == "header":
+                        text, level = content
+                        style_key = f'Heading{min(level + 1, 4)}'
+                        header_style = styles[style_key]
+                        para = Paragraph(text, header_style)
+                        story.append(para)
+                        story.append(Spacer(1, 8))
+
+                        # Capture this heading for TOC/outline
+                        def capture_heading(canvas, doc, level=level, text=text):
+                            doc._last_heading = (level, text)
+
+                        # Hack: attach postRender callback to dummy flowable
+                        spacer = Spacer(0, 0)
+                        spacer.__dict__["postRender"] = capture_heading
+                        story.append(spacer)
+
+                    elif kind == "table":
+                        df = content
+                        try:
+                            data = [df.columns.tolist()] + df.values.tolist()
+                            t = Table(data, repeatRows=1)
+                            t.setStyle(TableStyle([
+                                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#222C36")),
+                                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                                ('TOPPADDING', (0, 0), (-1, 0), 10),
+                                ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+                                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#B0B8C1")),
+                                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                                ('FONTSIZE', (0, 1), (-1, -1), 10),
+                                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+                                ('TOPPADDING', (0, 1), (-1, -1), 6),
+                                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+                            ]))
+                            story.append(t)
                             story.append(Spacer(1, 12))
-                        # Handle Matplotlib figures
-                        elif hasattr(fig, "savefig"):
-                            buf = io.BytesIO()
-                            fig.savefig(buf, format="png", bbox_inches="tight", dpi=300)
-                            buf.seek(0)
-                            img = Image(buf, width=6 * inch, height=4.5 * inch)
-                            story.append(img)
-                            story.append(Spacer(1, 12))
-                    except Exception as e:
-                        story.append(Paragraph(f"Plot could not be rendered: {e}", styles['Normal']))
-                elif kind == "syntax":
-                    # Handle syntax blocks
-                    pass
-                elif kind == "minipage":
-                    # Handle subpages
-                    pass
+                        except Exception:
+                            story.append(Paragraph("Table could not be rendered.", styles['Normal']))
+                    elif kind == "plot":
+                        fig = content
+                        try:
+                            if hasattr(fig, "to_image"):
+                                img_bytes = fig.to_image(format="png", width=800, height=600, scale=2)
+                                img_buffer = io.BytesIO(img_bytes)
+                                img = Image(img_buffer, width=6 * inch, height=4.5 * inch)
+                                story.append(img)
+                                story.append(Spacer(1, 12))
+                            elif hasattr(fig, "savefig"):
+                                buf = io.BytesIO()
+                                fig.savefig(buf, format="png", bbox_inches="tight", dpi=300)
+                                buf.seek(0)
+                                img = Image(buf, width=6 * inch, height=4.5 * inch)
+                                story.append(img)
+                                story.append(Spacer(1, 12))
+                        except Exception as e:
+                            story.append(Paragraph(f"Plot could not be rendered: {e}", styles['Normal']))
+                    elif kind == "syntax":
+                        pass
+                    elif kind == "syntax":
+                        code, language = content
+                        style = ParagraphStyle(
+                            name='CodeBlock',
+                            fontName='Courier',
+                            fontSize=8,
+                            leading=10,
+                            leftIndent=12,
+                            rightIndent=12,
+                            spaceBefore=6,
+                            spaceAfter=6,
+                            borderPadding=6,
+                            backColor=colors.whitesmoke
+                        )
+                        # Escape special characters for XML
+                        from xml.sax.saxutils import escape
+                        code_escaped = escape(code)
+                        para = Paragraph(f"<pre>{code_escaped}</pre>", style)
+                        story.append(para)
 
-            # Recursively render subpages
-            for child in getattr(page, "children", []):
-                story.append(PageBreak())  # Add a PageBreak before rendering subpages
-                render_page(child)
+                    elif kind == "minipage":
+                        pass
 
-        # Render all pages
-        for page in self.pages:
-            render_page(page)
-            story.append(PageBreak())  # Add a PageBreak after each top-level page
+                for child in getattr(page, "children", []):
+                    story.append(PageBreak())
+                    render_page(child)
 
-        # Build the PDF
-        doc = SimpleDocTemplate(output_path, pagesize=page_size)
-        doc.build(
-            story,
-            onFirstPage=lambda canvas, doc: add_marking(canvas, doc, title_page_marking),
-            onLaterPages=lambda canvas, doc: add_marking(canvas, doc, self.marking)
-        )
+            for page in self.pages:
+                render_page(page)
+                story.append(PageBreak())
+
+            doc = SimpleDocTemplate(output_path, pagesize=page_size)
+            # doc.afterFlowable = self._track_outline
+            doc.afterFlowable = lambda flowable: getattr(flowable, "postRender", lambda c, d: None)(doc.canv, doc) or self._track_outline(doc.canv, doc)
+
+            doc.build(
+                story,
+                onFirstPage=lambda canvas, doc: add_marking(canvas, doc, title_page_marking),
+                onLaterPages=lambda canvas, doc: add_marking(canvas, doc, self.marking)
+            )
