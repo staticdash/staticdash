@@ -101,10 +101,10 @@ dashboard.add_page(main)
 
 # --- Export ---
 dashboard.publish(output_dir="tutorial_output")
-dashboard.publish_pdf(
-    output_path="dashboard_report.pdf",
-    include_title_page=True,
-    title_page_marking="Title Page - StaticDash Inc.",
-    author="Brian Day",
-    affiliation="StaticDash Inc."
-)
+# dashboard.publish_pdf(
+#     output_path="dashboard_report.pdf",
+#     include_title_page=True,
+#     title_page_marking="Title Page - StaticDash Inc.",
+#     author="Brian Day",
+#     affiliation="StaticDash Inc."
+# )

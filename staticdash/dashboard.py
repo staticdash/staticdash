@@ -7,21 +7,12 @@ from dominate import document
 from dominate.tags import div, h1, h2, h3, h4, p, a, script, link, span
 from dominate.util import raw as raw_util
 import html
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle, Image
-from reportlab.platypus.tableofcontents import TableOfContents
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib import colors
-from reportlab.lib.units import inch
 import io
-import tempfile
-import matplotlib.pyplot as plt
-import io, base64
+import base64
 
 class AbstractPage:
     def __init__(self):
         self.elements = []
-
 
     def add_header(self, text, level=1, width=None):
         if level not in (1, 2, 3, 4):
@@ -48,58 +39,68 @@ class AbstractPage:
     def add_syntax(self, code, language="python", width=None):
         self.elements.append(("syntax", (code, language), width))
 
+
 class Page(AbstractPage):
     def __init__(self, slug, title, page_width=None, marking=None):
         super().__init__()
         self.slug = slug
         self.title = title
         self.page_width = page_width
-        self.marking = marking  # Page-specific marking
+        self.marking = marking  # None => inherit dashboard; str => override
         self.children = []
-        # self.add_header(title, level=1)
 
     def add_subpage(self, page):
         self.children.append(page)
 
-    def render(self, index, downloads_dir=None, relative_prefix="", inherited_width=None):
+    def render(
+        self,
+        index,
+        downloads_dir=None,
+        relative_prefix="",
+        inherited_width=None,
+        inherited_marking=None,
+        inherited_distribution=None
+    ):
         effective_width = self.page_width or inherited_width
+        effective_marking = self.marking if (self.marking is not None) else inherited_marking
+        effective_distribution = getattr(self, "distribution", None) or inherited_distribution
+
         elements = []
 
-        # # Add floating header and footer for marking
-        # marking = self.marking or "Default Marking"
-        # elements.append(div(
-        #     marking,
-        #     cls="floating-header",
-        #     style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;"
-        # ))
-        # elements.append(div(
-        #     marking,
-        #     cls="floating-footer",
-        #     style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;"
-        # ))
+        # Only show bars if a marking is present (no default text at all).
+        if effective_marking:
+            # Center within the MAIN CONTENT AREA (exclude sidebar and #content padding):
+            # left  = sidebar_width + content_padding_x
+            # width = viewport - sidebar_width - 2*content_padding_x
+            shared_pos = (
+                "position: fixed; "
+                "left: calc(var(--sidebar-width, 240px) + var(--content-padding-x, 20px)); "
+                "width: calc(100vw - var(--sidebar-width, 240px) - 2*var(--content-padding-x, 20px)); "
+                "text-align: center; "
+                "background-color: #f8f9fa; "
+                "padding: 10px; "
+                "z-index: 1000; "
+                "font-weight: normal;"
+            )
 
-        # Add floating header and footer with optional distribution
-        marking = self.marking or "Default Marking"
-        distribution = getattr(self, "distribution", None)
+            elements.append(div(
+                effective_marking,
+                cls="floating-header",
+                style=f"{shared_pos} top: 0;"
+            ))
 
-        elements.append(div(
-            marking,
-            cls="floating-header",
-            style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;"
-        ))
+            footer_block = []
+            if effective_distribution:
+                footer_block.append(div(effective_distribution, style="margin-bottom: 4px; font-size: 10pt;"))
+            footer_block.append(div(effective_marking))
 
-        footer_block = []
-        if distribution:
-            footer_block.append(div(distribution, style="margin-bottom: 4px; font-size: 10pt;"))
-        footer_block.append(div(marking))
+            elements.append(div(
+                *footer_block,
+                cls="floating-footer",
+                style=f"{shared_pos} bottom: 0;"
+            ))
 
-        elements.append(div(
-            *footer_block,
-            cls="floating-footer",
-            style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;"
-        ))
-
-
+        # Render elements
         for kind, content, el_width in self.elements:
             style = ""
             outer_style = ""
@@ -150,22 +151,36 @@ class Page(AbstractPage):
                     cls="syntax-block"
                 )
             elif kind == "minipage":
-                elem = content.render(index, downloads_dir=downloads_dir, relative_prefix=relative_prefix, inherited_width=effective_width)
+                elem = content.render(
+                    index,
+                    downloads_dir=downloads_dir,
+                    relative_prefix=relative_prefix,
+                    inherited_width=effective_width,
+                    inherited_marking=effective_marking,
+                    inherited_distribution=effective_distribution
+                )
             if el_width is not None:
                 elem = div(elem, style=style)
                 elem = div(elem, style=outer_style)
             elements.append(elem)
 
-        # Add padding to avoid overlap with header and footer
-        wrapper = div(*elements, style=f"max-width: {effective_width}px; margin: 0 auto; width: 100%; padding-top: 80px; padding-bottom: 80px;")
+        # Expose --content-width if you need it later, but centering no longer depends on it
+        wrapper_style = (
+            f"max-width: {effective_width}px; "
+            "margin: 0 auto; width: 100%; "
+            "padding-top: 80px; padding-bottom: 80px; "
+            f"--content-width: {effective_width}px;"
+        )
+        wrapper = div(*elements, style=wrapper_style)
         return [wrapper]
+
 
 class MiniPage(AbstractPage):
     def __init__(self, page_width=None):
         super().__init__()
         self.page_width = page_width
 
-    def render(self, index=None, downloads_dir=None, relative_prefix="", inherited_width=None):
+    def render(self, index=None, downloads_dir=None, relative_prefix="", inherited_width=None, inherited_marking=None, inherited_distribution=None):
         effective_width = self.page_width or inherited_width
         row_div = div(cls="minipage-row", style=f"max-width: {effective_width}px; margin: 0 auto; width: 100%;")
         for kind, content, el_width in self.elements:
@@ -183,10 +198,8 @@ class MiniPage(AbstractPage):
                 elem = header_tag(text)
             elif kind == "plot":
                 fig = content
-                # Plotly support (existing)
                 if hasattr(fig, "to_html"):
                     elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})))
-                # Matplotlib support
                 else:
                     try:
                         buf = io.BytesIO()
@@ -194,7 +207,6 @@ class MiniPage(AbstractPage):
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")
                         buf.close()
-                        # Center the image using a div with inline styles
                         elem = div(
                             raw_util(f'<img src="data:image/png;base64,{img_base64}" style="max-width:100%;">'),
                             style="display: flex; justify-content: center; align-items: center;"
@@ -218,7 +230,14 @@ class MiniPage(AbstractPage):
                     cls="syntax-block"
                 )
             elif kind == "minipage":
-                elem = content.render(index, downloads_dir=downloads_dir, relative_prefix=relative_prefix, inherited_width=effective_width)
+                elem = content.render(
+                    index,
+                    downloads_dir=downloads_dir,
+                    relative_prefix=relative_prefix,
+                    inherited_width=effective_width,
+                    inherited_marking=inherited_marking,
+                    inherited_distribution=inherited_distribution
+                )
             if el_width is not None:
                 elem = div(elem, style=style)
                 elem = div(elem, style=outer_style)
@@ -226,67 +245,50 @@ class MiniPage(AbstractPage):
             row_div += cell
         return row_div
 
+
 class Dashboard:
     def __init__(self, title="Dashboard", page_width=900, marking=None, distribution=None):
         self.title = title
         self.pages = []
         self.page_width = page_width
-        self.marking = marking  # Dashboard-wide marking
-        self.distribution = distribution  # NEW: Distribution statement
+        self.marking = marking            # Dashboard-wide default (None => no marking)
+        self.distribution = distribution  # Dashboard-wide distribution statement
 
     def add_page(self, page):
         self.pages.append(page)
-    
-    # def _track_outline(self, flowable):
-    #     """
-    #     Hook for collecting TOC entries and setting bookmarks.
-    #     """
-    #     from reportlab.platypus import Paragraph
-    #     if isinstance(flowable, Paragraph):
-    #         text = flowable.getPlainText()
-    #         style_name = flowable.style.name
-    #         if style_name.startswith("Heading"):
-    #             try:
-    #                 level = int(style_name.replace("Heading", ""))
-    #             except ValueError:
-    #                 return
-    #             key = f"bookmark_{uuid.uuid4().hex}"
-    #             flowable.canv.bookmarkPage(key)
-    #             flowable.canv.addOutlineEntry(text, key, level=level - 1, closed=False)
-    #             flowable._bookmarkName = key
-
-
-    def _track_outline(self, canvas, doc):
-        if hasattr(doc, '_last_heading'):
-            level, text = doc._last_heading
-            key = f"bookmark_{uuid.uuid4().hex}"
-            canvas.bookmarkPage(key)
-            canvas.addOutlineEntry(text, key, level=level - 1, closed=False)
-            del doc._last_heading
-
 
     def _render_sidebar(self, pages, prefix="", current_slug=None):
+        # Structure preserved for your JS/CSS:
+        # <div class="sidebar-group [open]">
+        #   <a class="nav-link sidebar-parent" href="...">
+        #       <span class="sidebar-arrow"></span>Title
+        #   </a>
+        #   <div class="sidebar-children"> ... </div>
+        # </div>
         for page in pages:
             page_href = f"{prefix}{page.slug}.html"
             is_active = (page.slug == current_slug)
-            def has_active_child(page):
+
+            def has_active_child(pg):
                 return any(
                     child.slug == current_slug or has_active_child(child)
-                    for child in getattr(page, "children", [])
+                    for child in getattr(pg, "children", [])
                 )
+
             group_open = has_active_child(page)
             link_classes = "nav-link"
             if getattr(page, "children", []):
                 link_classes += " sidebar-parent"
             if is_active:
                 link_classes += " active"
+
             if getattr(page, "children", []):
                 group_cls = "sidebar-group"
                 if group_open or is_active:
                     group_cls += " open"
                 with div(cls=group_cls):
                     a([
-                        span("▶", cls="sidebar-arrow"),
+                        span("", cls="sidebar-arrow"),  # pure-CSS triangle (no Unicode)
                         page.title
                     ], cls=link_classes, href=page_href)
                     with div(cls="sidebar-children"):
@@ -316,7 +318,8 @@ class Dashboard:
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"))
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"))
                 doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"))
-                # Inject dynamic page width
+                # Defaults that match your CSS; override in CSS if they change
+                doc.head.add(raw_util("<style>:root{--sidebar-width:240px;--content-padding-x:20px;}</style>"))
                 doc.head.add(raw_util(f"<style>.content-inner {{ max-width: {effective_width}px !important; }}</style>"))
             with doc:
                 with div(id="sidebar"):
@@ -326,17 +329,26 @@ class Dashboard:
                         a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
                 with div(id="content"):
                     with div(cls="content-inner"):
-                        for el in page.render(0, downloads_dir=downloads_dir, relative_prefix="../"):
+                        for el in page.render(
+                            0,
+                            downloads_dir=downloads_dir,
+                            relative_prefix="../",
+                            inherited_width=self.page_width,
+                            inherited_marking=self.marking,
+                            inherited_distribution=self.distribution
+                        ):
                             div(el)
-            with open(os.path.join(pages_dir, f"{page.slug}.html"), "w") as f:
+
+            with open(os.path.join(pages_dir, f"{page.slug}.html"), "w", encoding="utf-8") as f:
                 f.write(str(doc))
+
             for child in getattr(page, "children", []):
                 write_page(child)
 
         for page in self.pages:
             write_page(page)
 
-        # Index page
+        # Index page (first page)
         index_doc = document(title=self.title)
         effective_width = self.pages[0].page_width or self.page_width or 900
         with index_doc.head:
@@ -352,7 +364,7 @@ class Dashboard:
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"))
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"))
             index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"))
-            # Inject dynamic page width
+            index_doc.head.add(raw_util("<style>:root{--sidebar-width:240px;--content-padding-x:20px;}</style>"))
             index_doc.head.add(raw_util(f"<style>.content-inner {{ max-width: {effective_width}px !important; }}</style>"))
         with index_doc:
             with div(id="sidebar"):
@@ -362,293 +374,15 @@ class Dashboard:
                     a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
             with div(id="content"):
                 with div(cls="content-inner"):
-                    for el in self.pages[0].render(0, downloads_dir=downloads_dir, relative_prefix=""):
+                    for el in self.pages[0].render(
+                        0,
+                        downloads_dir=downloads_dir,
+                        relative_prefix="",
+                        inherited_width=self.page_width,
+                        inherited_marking=self.marking,
+                        inherited_distribution=self.distribution
+                    ):
                         div(el)
 
-        with open(os.path.join(output_dir, "index.html"), "w") as f:
+        with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
             f.write(str(index_doc))
-
-    def publish_pdf(self, output_path="dashboard_report.pdf", pagesize="A4", include_toc=True, include_title_page=False, author=None, affiliation=None, title_page_marking=None):
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle, Image
-        from reportlab.platypus.tableofcontents import TableOfContents
-        from reportlab.lib.pagesizes import A4, letter
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib import colors
-        from reportlab.lib.units import inch
-        from datetime import datetime
-        import tempfile
-        import io
-        import os
-        import plotly.io as pio
-
-        pio.kaleido.scope.default_format = "png"
-
-        page_size = A4 if pagesize.upper() == "A4" else letter
-        styles = getSampleStyleSheet()
-        normal_style = styles['Normal']
-
-        styles['Heading1'].fontSize = 18
-        styles['Heading1'].spaceAfter = 12
-        styles['Heading1'].spaceBefore = 18
-        styles['Heading1'].fontName = 'Helvetica-Bold'
-
-        styles['Heading2'].fontSize = 14
-        styles['Heading2'].spaceAfter = 8
-        styles['Heading2'].spaceBefore = 12
-        styles['Heading2'].fontName = 'Helvetica-Bold'
-
-        if 'CodeBlock' not in styles:
-            styles.add(ParagraphStyle(
-                name='CodeBlock',
-                fontName='Courier',
-                fontSize=9,
-                leading=12,
-                backColor=colors.whitesmoke,
-                leftIndent=12,
-                rightIndent=12,
-                spaceAfter=8,
-                borderPadding=4
-            ))
-
-        story = []
-
-        class MyDocTemplate(SimpleDocTemplate):
-            def __init__(self, *args, **kwargs):
-                self.outline_entries = []
-                self._outline_idx = 0
-                super().__init__(*args, **kwargs)
-
-
-            def afterFlowable(self, flowable):
-                from reportlab.platypus import Paragraph
-                if isinstance(flowable, Paragraph):
-                    style_name = flowable.style.name
-                    if style_name.startswith('Heading'):
-                        try:
-                            level = int(style_name.replace("Heading", ""))
-                        except ValueError:
-                            return  # Not a valid heading style
-
-                        # Convert to outline level (0 = H1, 1 = H2, etc.)
-                        outline_level = level - 1
-
-                        # Clamp max to 2 for PDF outline safety
-                        outline_level = max(0, min(outline_level, 2))
-
-                        # Prevent skipping levels: ensure intermediates exist
-                        # Track previous levels (add this as a class attribute if needed)
-                        if not hasattr(self, "_last_outline_level"):
-                            self._last_outline_level = -1
-
-                        if outline_level > self._last_outline_level + 1:
-                            outline_level = self._last_outline_level + 1  # prevent jump
-
-                        self._last_outline_level = outline_level
-
-                        text = flowable.getPlainText()
-                        key = 'heading_%s' % self.seq.nextf('heading')
-                        self.canv.bookmarkPage(key)
-                        self.canv.addOutlineEntry(text, key, level=outline_level, closed=False)
-
-
-                        self.notify('TOCEntry', (outline_level, text, self.page))
-
-
-        def add_marking(canvas, doc, marking):
-            from reportlab.pdfbase.pdfmetrics import stringWidth
-
-            distribution = self.distribution
-            canvas.saveState()
-            canvas.setFont("Helvetica", 10)
-            width, height = doc.pagesize
-
-            line_height = 12
-            margin_y = 36
-
-            # Top of page marking
-            if marking:
-                top_width = stringWidth(marking, "Helvetica", 10)
-                x_top = (width - top_width) / 2
-                canvas.drawString(x_top, height - margin_y, marking)
-
-            # Bottom of page — prepare to stack upward
-            y = margin_y
-
-            # First: bottom marking
-            if marking:
-                bot_width = stringWidth(marking, "Helvetica", 10)
-                x_bot = (width - bot_width) / 2
-                canvas.drawString(x_bot, y, marking)
-                y += line_height  # make room above
-
-            # Then: bottom distribution (above marking)
-            if distribution:
-                max_width = width - 144  # ~1" margins
-                words = distribution.split()
-                lines = []
-                current_line = []
-
-                for word in words:
-                    test_line = " ".join(current_line + [word])
-                    if stringWidth(test_line, "Helvetica", 10) <= max_width:
-                        current_line.append(word)
-                    else:
-                        lines.append(" ".join(current_line))
-                        current_line = [word]
-
-                if current_line:
-                    lines.append(" ".join(current_line))
-
-                # Draw top-down (above marking)
-                for line in reversed(lines):
-                    line_width = stringWidth(line, "Helvetica", 10)
-                    x = (width - line_width) / 2
-                    y += line_height
-                    canvas.drawString(x, y, line)
-
-            canvas.restoreState()
-
-
-        if include_title_page:
-            story.append(Spacer(1, 120))
-            story.append(Paragraph(f"<b>{self.title}</b>", styles['Title']))
-            story.append(Spacer(1, 48))
-            lines = []
-            if author:
-                lines.append(str(author))
-            if affiliation:
-                lines.append(str(affiliation))
-            lines.append(datetime.now().strftime('%B %d, %Y'))
-            story.append(Paragraph("<para align='center'>" + "<br/>".join(lines) + "</para>", normal_style))
-            story.append(PageBreak())
-
-        if include_toc:
-            toc = TableOfContents()
-            toc.levelStyles = [
-                ParagraphStyle(name='TOCHeading1', fontSize=14, leftIndent=20, firstLineIndent=-20, spaceBefore=10, leading=16),
-                ParagraphStyle(name='TOCHeading2', fontSize=12, leftIndent=40, firstLineIndent=-20, spaceBefore=5, leading=12),
-            ]
-            story.append(Paragraph("Table of Contents", styles["Title"]))
-            story.append(toc)
-            story.append(PageBreak())
-
-        def render_page(page, level=0, sec_prefix=[]):
-            # Generate section numbering like "1", "1.2", etc.
-            section_number = ".".join(map(str, sec_prefix)) 
-            heading_text = f"{section_number} {page.title}"
-
-            heading_style = styles.get(f'Heading{min(level + 1, 4)}', styles['Heading4'])
-            story.append(Paragraph(heading_text, heading_style))
-            story.append(Spacer(1, 12))
-
-
-            # Remember where we started
-            content_start = len(story)
-
-
-            for kind, content, _ in page.elements:
-                try:
-                    if kind == "text":
-                        story.append(Paragraph(content, normal_style))
-                        story.append(Spacer(1, 8))
-
-                    elif kind == "header":
-                        text, lvl = content
-                        safe_lvl = max(1, min(lvl + 1, 4))
-                        style = styles[f'Heading{safe_lvl}']
-                        story.append(Paragraph(text, style))
-                        story.append(Spacer(1, 8))
-
-                    elif kind == "table":
-                        df = content
-                        data = [df.columns.tolist()] + df.values.tolist()
-                        t = Table(data, repeatRows=1)
-                        t.setStyle(TableStyle([
-                            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#222C36")),
-                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                            ('FONTSIZE', (0, 0), (-1, 0), 11),
-                            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-                            ('TOPPADDING', (0, 0), (-1, 0), 10),
-                            ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
-                            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#B0B8C1")),
-                            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                            ('FONTSIZE', (0, 1), (-1, -1), 10),
-                            ('LEFTPADDING', (0, 0), (-1, -1), 6),
-                            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
-                            ('TOPPADDING', (0, 1), (-1, -1), 6),
-                            ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-                        ]))
-                        story.append(t)
-                        story.append(Spacer(1, 12))
-
-                    elif kind == "plot":
-                        fig = content
-                        buf = io.BytesIO()
-                        if hasattr(fig, "savefig"):
-                            fig.savefig(buf, format="png", bbox_inches="tight", dpi=600)
-                        else:
-                            fig.write_image(buf, format="png", width=800, height=600, scale=3)
-                        buf.seek(0)
-                        story.append(Image(buf, width=6 * inch, height=4.5 * inch))
-                        story.append(Spacer(1, 12))
-
-                    elif kind == "syntax":
-                        code, language = content
-                        from html import escape
-                        story.append(Paragraph(f"<b>Code ({language}):</b>", normal_style))
-                        story.append(Spacer(1, 4))
-                        code_html = escape(code).replace(" ", "&nbsp;").replace("\n", "<br/>")
-                        story.append(Paragraph(f"<font face='Courier'>{code_html}</font>", styles['CodeBlock']))
-                        story.append(Spacer(1, 12))
-
-                    elif kind == "minipage":
-                        render_page(content, level=level + 1, sec_prefix=sec_prefix)
-
-                except Exception as e:
-                    story.append(Paragraph(f"Error rendering element: {e}", normal_style))
-
-
-            just_broke = False
-
-            for i, child in enumerate(page.children):
-                if i > 0 and not just_broke:
-                    story.append(PageBreak())
-
-                before = len(story)
-                render_page(child, level=level + 1, sec_prefix=sec_prefix + [i + 1])
-                after = len(story)
-
-                # Determine if child added a PageBreak
-                just_broke = isinstance(story[-1], PageBreak) if after > before else False
-
-
-            # Determine if anything meaningful was added
-            def has_meaningful_content(start_idx):
-                for elem in story[start_idx:]:
-                    if isinstance(elem, (Paragraph, Table, Image)):
-                        return True
-                return False
-
-            if not page.children and has_meaningful_content(content_start):
-                story.append(PageBreak())
-
-
-
-        for i, page in enumerate(self.pages):
-            render_page(page, level=0, sec_prefix=[i + 1])
-
-
-
-        doc = MyDocTemplate(
-            output_path,
-            pagesize=page_size,
-            rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72,
-        )
-
-        doc.multiBuild(
-            story,
-            onFirstPage=lambda canvas, doc: add_marking(canvas, doc, title_page_marking),
-            onLaterPages=lambda canvas, doc: add_marking(canvas, doc, self.marking)
-        )

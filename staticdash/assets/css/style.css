@@ -372,3 +372,24 @@ body.sidebar-animate .sidebar-arrow {
   color: #fff;
   text-decoration: none;
 }
+
+:root {
+  --sidebar-width: 240px;      /* matches #sidebar width */
+  --content-padding-x: 20px;    /* matches #content horizontal padding */
+}
+
+/* Pure-CSS triangle for sidebar arrow */
+.sidebar-arrow {
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 8px solid #bdc3c7; /* arrow color */
+  margin-right: 6px;
+}
+
+/* Rotate when group is open (you already have this rule; keep it) */
+body.sidebar-animate .sidebar-group.open .sidebar-arrow {
+  transform: rotate(90deg);
+  transform-origin: 30% 50%;
+}
