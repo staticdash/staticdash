@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script><style>.content-inner { max-width: 900px !important; }</style>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"></script><style>:root{--sidebar-width:240px;--content-padding-x:20px;}</style><style>.content-inner { max-width: 900px !important; }</style>
   </head>
   <body>
     <div id="sidebar">
@@ -25,7 +25,7 @@
       <a class="nav-link" href="pages/tables.html">Tables</a>
       <div class="sidebar-group">
         <a class="nav-link sidebar-parent" href="pages/main.html">
-          <span class="sidebar-arrow">▶</span>Main Page
+          <span class="sidebar-arrow"></span>Main Page
         </a>
         <div class="sidebar-children">
           <a class="nav-link" href="pages/sub1.html">Subpage 1</a>
@@ -39,9 +39,10 @@
     <div id="content">
       <div class="content-inner">
         <div>
-          <div style="max-width: Nonepx; margin: 0 auto; width: 100%; padding-top: 80px; padding-bottom: 80px;">
-            <div class="floating-header" style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;">Public - Not Confidential</div>
-            <div class="floating-footer" style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: auto; background-color: #f8f9fa; text-align: center; padding: 10px; z-index: 1000; font-weight: normal;">
+          <div style="max-width: 900px; margin: 0 auto; width: 100%; padding-top: 80px; padding-bottom: 80px; --content-width: 900px;">
+            <div class="floating-header" style="position: fixed; left: calc(var(--sidebar-width, 240px) + var(--content-padding-x, 20px)); width: calc(100vw - var(--sidebar-width, 240px) - 2*var(--content-padding-x, 20px)); text-align: center; background-color: #f8f9fa; padding: 10px; z-index: 1000; font-weight: normal; top: 0;">Public - Not Confidential</div>
+            <div class="floating-footer" style="position: fixed; left: calc(var(--sidebar-width, 240px) + var(--content-padding-x, 20px)); width: calc(100vw - var(--sidebar-width, 240px) - 2*var(--content-padding-x, 20px)); text-align: center; background-color: #f8f9fa; padding: 10px; z-index: 1000; font-weight: normal; bottom: 0;">
+              <div style="margin-bottom: 4px; font-size: 10pt;">DISTRIBUTION STATEMENT A. Approved for public release.</div>
               <div>Public - Not Confidential</div>
             </div>
             <p>StaticDash is a Python library for building beautiful, interactive, static dashboards—no server required. You can combine plots, tables, code, downloads, and more, all with a simple API.</p>
