@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e .
+          pip install .
           pip install build twine
           pip install plotly pandas numpy dominate
 
