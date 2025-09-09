@@ -25,7 +25,13 @@ dependencies = [
 packages = ["staticdash"]
 
 [tool.setuptools.package-data]
-staticdash = ["assets/css/*.css", "assets/js/*.js"]
+staticdash = [
+  "assets/css/*.css",
+  "assets/js/*.js",
+  "assets/vendor/*",
+  "assets/vendor/**/*"
+]
+
 
 [project.urls]
 Homepage = "https://github.com/staticdash/staticdash"

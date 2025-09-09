@@ -117,7 +117,8 @@ class Page(AbstractPage):
             elif kind == "plot":
                 fig = content
                 if hasattr(fig, "to_html"):
-                    elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})))
+                    # Use local Plotly loaded in <head>
+                    elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})))
                 else:
                     try:
                         buf = io.BytesIO()
@@ -199,7 +200,8 @@ class MiniPage(AbstractPage):
             elif kind == "plot":
                 fig = content
                 if hasattr(fig, "to_html"):
-                    elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs='cdn', config={'responsive': True})))
+                    # Use local Plotly loaded in <head>
+                    elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})))
                 else:
                     try:
                         buf = io.BytesIO()
@@ -307,26 +309,41 @@ class Dashboard:
         os.makedirs(downloads_dir, exist_ok=True)
         shutil.copytree(assets_src, assets_dst, dirs_exist_ok=True)
 
+        def _add_head_assets(head, rel_prefix, effective_width):
+            # Your CSS/JS
+            head.add(link(rel="stylesheet", href=f"{rel_prefix}assets/css/style.css"))
+            head.add(script(type="text/javascript", src=f"{rel_prefix}assets/js/script.js"))
+
+            # MathJax: config for $...$ and $$...$$, then local bundle
+            head.add(raw_util(
+                "<script>window.MathJax={tex:{inlineMath:[['$','$'],['\\\\(','\\\\)']],displayMath:[['$$','$$'],['\\\\[','\\\\]']]}};</script>"
+            ))
+            head.add(script(src=f"{rel_prefix}assets/vendor/mathjax/tex-mml-chtml.js"))
+
+            # Prism (theme + core + languages) — all local
+            head.add(link(rel="stylesheet", href=f"{rel_prefix}assets/vendor/prism/prism-tomorrow.min.css"))
+            head.add(script(src=f"{rel_prefix}assets/vendor/prism/prism.min.js"))
+            head.add(script(src=f"{rel_prefix}assets/vendor/prism/components/prism-python.min.js"))
+            head.add(script(src=f"{rel_prefix}assets/vendor/prism/components/prism-javascript.min.js"))
+
+            # Plotly local bundle (figs use include_plotlyjs=False)
+            head.add(script(src=f"{rel_prefix}assets/vendor/plotly/plotly.min.js"))
+
+            # Defaults that match your CSS; override in CSS if they change
+            head.add(raw_util("<style>:root{--sidebar-width:240px;--content-padding-x:20px;}</style>"))
+            head.add(raw_util(f"<style>.content-inner {{ max-width: {effective_width}px !important; }}</style>"))
+
         def write_page(page):
             doc = document(title=page.title)
             effective_width = page.page_width or self.page_width or 900
             with doc.head:
-                doc.head.add(link(rel="stylesheet", href="../assets/css/style.css"))
-                doc.head.add(script(type="text/javascript", src="../assets/js/script.js"))
-                doc.head.add(script(src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"))
-                doc.head.add(link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css"))
-                doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"))
-                doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"))
-                doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"))
-                # Defaults that match your CSS; override in CSS if they change
-                doc.head.add(raw_util("<style>:root{--sidebar-width:240px;--content-padding-x:20px;}</style>"))
-                doc.head.add(raw_util(f"<style>.content-inner {{ max-width: {effective_width}px !important; }}</style>"))
+                _add_head_assets(doc.head, rel_prefix="../", effective_width=effective_width)
             with doc:
                 with div(id="sidebar"):
                     a(self.title, href="../index.html", cls="sidebar-title")
                     self._render_sidebar(self.pages, prefix="", current_slug=page.slug)
                     with div(id="sidebar-footer"):
-                        a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
+                        a("Produced by staticdash", href="../index.html")
                 with div(id="content"):
                     with div(cls="content-inner"):
                         for el in page.render(
@@ -352,26 +369,13 @@ class Dashboard:
         index_doc = document(title=self.title)
         effective_width = self.pages[0].page_width or self.page_width or 900
         with index_doc.head:
-            index_doc.head.add(link(rel="stylesheet", href="assets/css/style.css"))
-            index_doc.head.add(script(type="text/javascript", src="assets/js/script.js"))
-            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"))
-            index_doc.head.add(link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css"))
-            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"))
-            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"))
-            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"))
-            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sql.min.js"))
-            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"))
-            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"))
-            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"))
-            index_doc.head.add(script(src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-c.min.js"))
-            index_doc.head.add(raw_util("<style>:root{--sidebar-width:240px;--content-padding-x:20px;}</style>"))
-            index_doc.head.add(raw_util(f"<style>.content-inner {{ max-width: {effective_width}px !important; }}</style>"))
+            _add_head_assets(index_doc.head, rel_prefix="", effective_width=effective_width)
         with index_doc:
             with div(id="sidebar"):
                 a(self.title, href="index.html", cls="sidebar-title")
                 self._render_sidebar(self.pages, prefix="pages/", current_slug=self.pages[0].slug)
                 with div(id="sidebar-footer"):
-                    a("Produced by staticdash", href="https://pypi.org/project/staticdash/", target="_blank")
+                    a("Produced by staticdash", href="index.html")
             with div(id="content"):
                 with div(cls="content-inner"):
                     for el in self.pages[0].render(
