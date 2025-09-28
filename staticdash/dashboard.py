@@ -314,20 +314,31 @@ class Dashboard:
             head.add(link(rel="stylesheet", href=f"{rel_prefix}assets/css/style.css"))
             head.add(script(type="text/javascript", src=f"{rel_prefix}assets/js/script.js"))
 
-            # MathJax: config for $...$ and $$...$$, then **SVG** bundle (no webfonts needed)
+            # MathJax: config for $...$ and $$...$$
             head.add(raw_util(
                 "<script>window.MathJax={tex:{inlineMath:[['$','$'],['\\\\(','\\\\)']],displayMath:[['$$','$$'],['\\\\[','\\\\]']]}};</script>"
             ))
-            head.add(script(src=f"{rel_prefix}assets/vendor/mathjax/tex-svg.js"))
+            # Local-first, CDN-fallback (for editable installs without vendored files)
+            head.add(raw_util(
+                f"<script src=\"{rel_prefix}assets/vendor/mathjax/tex-svg.js\" "
+                "onerror=\"var s=document.createElement('script');"
+                "s.src='https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';"
+                "document.head.appendChild(s);\"></script>"
+            ))
 
-            # Prism (theme + core + languages) — all local
+            # Prism (theme + core + languages) — still local
             head.add(link(rel="stylesheet", href=f"{rel_prefix}assets/vendor/prism/prism-tomorrow.min.css"))
             head.add(script(src=f"{rel_prefix}assets/vendor/prism/prism.min.js"))
             head.add(script(src=f"{rel_prefix}assets/vendor/prism/components/prism-python.min.js"))
             head.add(script(src=f"{rel_prefix}assets/vendor/prism/components/prism-javascript.min.js"))
 
-            # Plotly local bundle (figs use include_plotlyjs=False)
-            head.add(script(src=f"{rel_prefix}assets/vendor/plotly/plotly.min.js"))
+            # Plotly local-first, CDN-fallback
+            head.add(raw_util(
+                f"<script src=\"{rel_prefix}assets/vendor/plotly/plotly.min.js\" "
+                "onerror=\"var s=document.createElement('script');"
+                "s.src='https://cdn.plot.ly/plotly-2.32.0.min.js';"
+                "document.head.appendChild(s);\"></script>"
+            ))
 
             # Defaults that match your CSS; override in CSS if they change
             head.add(raw_util("<style>:root{--sidebar-width:240px;--content-padding-x:20px;}</style>"))
