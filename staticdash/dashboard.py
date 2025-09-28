@@ -296,7 +296,7 @@ class Dashboard:
                     with div(cls="sidebar-children"):
                         self._render_sidebar(page.children, prefix, current_slug)
             else:
-                a(page.title, cls=link_classes, href=page_href)
+                a(page.title, cls="nav-link", href=page_href)
 
     def publish(self, output_dir="output"):
         output_dir = os.path.abspath(output_dir)
@@ -314,11 +314,11 @@ class Dashboard:
             head.add(link(rel="stylesheet", href=f"{rel_prefix}assets/css/style.css"))
             head.add(script(type="text/javascript", src=f"{rel_prefix}assets/js/script.js"))
 
-            # MathJax: config for $...$ and $$...$$, then local bundle
+            # MathJax: config for $...$ and $$...$$, then **SVG** bundle (no webfonts needed)
             head.add(raw_util(
                 "<script>window.MathJax={tex:{inlineMath:[['$','$'],['\\\\(','\\\\)']],displayMath:[['$$','$$'],['\\\\[','\\\\]']]}};</script>"
             ))
-            head.add(script(src=f"{rel_prefix}assets/vendor/mathjax/tex-mml-chtml.js"))
+            head.add(script(src=f"{rel_prefix}assets/vendor/mathjax/tex-svg.js"))
 
             # Prism (theme + core + languages) — all local
             head.add(link(rel="stylesheet", href=f"{rel_prefix}assets/vendor/prism/prism-tomorrow.min.css"))

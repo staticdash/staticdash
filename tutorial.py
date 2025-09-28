@@ -99,6 +99,23 @@ main.add_subpage(sub2)
 
 dashboard.add_page(main)
 
+# --- 8. MathJax / LaTeX Math Demo ---
+page_math = Page("math", "MathJax / LaTeX Math")
+page_math.add_text(
+    "StaticDash supports LaTeX math via MathJax in HTML. For example:"
+)
+page_math.add_text(
+    r"""
+    Inline: \( x^2 + y^2 \)
+
+    Display:
+    \[
+    x^2 + y^2 = r^2
+    \]
+    """
+)
+dashboard.add_page(page_math)
+
 # --- Export ---
 dashboard.publish(output_dir="tutorial_output")
 # dashboard.publish_pdf(
