@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Introduction</title>
+    <title>MathJax / LaTeX Math</title>
     <link href="../assets/css/style.css" rel="stylesheet">
     <script src="../assets/js/script.js" type="text/javascript"></script><script>window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]}};</script>
     <script src="../assets/vendor/mathjax/tex-svg.js"></script>
@@ -37,12 +37,20 @@
       <div class="content-inner">
         <div>
           <div style="max-width: 900px; margin: 0 auto; width: 100%; padding-top: 80px; padding-bottom: 80px; --content-width: 900px;">
-            <div class="floating-header" style="position: fixed; left: calc(var(--sidebar-width, 240px) + var(--content-padding-x, 20px)); width: calc(100vw - var(--sidebar-width, 240px) - 2*var(--content-padding-x, 20px)); text-align: center; background-color: #f8f9fa; padding: 10px; z-index: 1000; font-weight: normal; top: 0;">Public - Not Confidential</div>
+            <div class="floating-header" style="position: fixed; left: calc(var(--sidebar-width, 240px) + var(--content-padding-x, 20px)); width: calc(100vw - var(--sidebar-width, 240px) - 2*var(--content-padding-x, 20px)); text-align: center; background-color: #f8f9fa; padding: 10px; z-index: 1000; font-weight: normal; top: 0;">Confidential - For Internal Use Only</div>
             <div class="floating-footer" style="position: fixed; left: calc(var(--sidebar-width, 240px) + var(--content-padding-x, 20px)); width: calc(100vw - var(--sidebar-width, 240px) - 2*var(--content-padding-x, 20px)); text-align: center; background-color: #f8f9fa; padding: 10px; z-index: 1000; font-weight: normal; bottom: 0;">
               <div style="margin-bottom: 4px; font-size: 10pt;">DISTRIBUTION STATEMENT A. Approved for public release.</div>
-              <div>Public - Not Confidential</div>
+              <div>Confidential - For Internal Use Only</div>
             </div>
-            <p>StaticDash is a Python library for building beautiful, interactive, static dashboards—no server required. You can combine plots, tables, code, downloads, and more, all with a simple API.</p>
+            <p>StaticDash supports LaTeX math via MathJax in HTML. For example:</p>
+            <p>
+    Inline: \( x^2 + y^2 \)
+
+    Display:
+    \[
+    x^2 + y^2 = r^2
+    \]
+    </p>
           </div>
         </div>
       </div>
