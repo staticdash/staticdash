@@ -436,6 +436,11 @@ class Directory:
             slug = dashboard.title.lower().replace(" ", "-")
             # Remove special characters
             slug = "".join(c for c in slug if c.isalnum() or c == "-")
+            # Clean up multiple consecutive hyphens
+            import re
+            slug = re.sub(r'-+', '-', slug)
+            # Remove leading/trailing hyphens
+            slug = slug.strip("-")
         
         self.dashboards.append((slug, dashboard))
     
