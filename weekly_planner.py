@@ -30,7 +30,6 @@ Features:
 
 from staticdash import Page, Dashboard
 from datetime import datetime, timedelta
-import calendar
 
 def generate_weekly_planner(year=None, num_weeks=52):
     """
@@ -51,12 +50,13 @@ def generate_weekly_planner(year=None, num_weeks=52):
     
     # Start from the first Monday of the year (or close to it)
     jan1 = datetime(year, 1, 1)
-    # Find the first Monday
-    days_to_monday = (7 - jan1.weekday()) % 7
-    if days_to_monday > 0:
-        first_monday = jan1 + timedelta(days=days_to_monday)
-    else:
-        first_monday = jan1
+    # Find the first Monday (weekday() returns 0 for Monday, 6 for Sunday)
+    # Calculate days until next Monday: (7 - current_weekday) % 7
+    # If jan1 is Monday (0), result is 0 (already Monday)
+    # If jan1 is Tuesday (1), result is 6 (wait 6 days)
+    # If jan1 is Sunday (6), result is 1 (wait 1 day)
+    days_to_monday = (0 - jan1.weekday()) % 7
+    first_monday = jan1 + timedelta(days=days_to_monday)
     
     # Generate pages for each week
     for week_num in range(1, num_weeks + 1):
