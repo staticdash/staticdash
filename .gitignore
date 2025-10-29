@@ -192,3 +192,8 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# StaticDash output directories
+weekly_planner_output/
+tutorial_output/
+output/

@@ -1,6 +1,31 @@
 """
 Weekly Planner/Calendar Generator using StaticDash
-Generates a weekly planner with one page per week, showing correct dates for any year.
+
+This script generates a beautiful, professional weekly planner/calendar with one page per week.
+Each page includes:
+- 7 day boxes (Monday through Sunday) with correct dates
+- A large "Weekly Notes" section for planning and reminders
+- Beautiful gradient styling and hover effects
+- Print-friendly CSS for easy printing
+
+Usage:
+    python weekly_planner.py
+
+Customization:
+    from weekly_planner import generate_weekly_planner
+    
+    # Generate planner for a specific year
+    planner = generate_weekly_planner(year=2026, num_weeks=52)
+    planner.publish(output_dir="my_planner_2026")
+
+Features:
+- Automatically calculates correct dates for any year
+- Starts weeks on Monday (ISO 8601 standard)
+- Professional styling with gradients and shadows
+- Sidebar navigation to jump to any week
+- Ample space in each day box for note-taking
+- Large weekly notes section
+- Print-friendly design
 """
 
 from staticdash import Page, Dashboard

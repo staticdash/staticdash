@@ -40,6 +40,30 @@ pip install staticdash
 
 [View the latest demo dashboard](https://staticdash.github.io/staticdash/)
 
+## Examples
+
+- **Tutorial:** [`tutorial.py`](./tutorial.py) - Comprehensive tutorial showing all features
+- **Weekly Planner:** [`weekly_planner.py`](./weekly_planner.py) - Beautiful weekly calendar/planner generator
+
+### Weekly Planner Example
+
+Generate a professional weekly planner with correct dates for any year:
+
+```python
+from weekly_planner import generate_weekly_planner
+
+# Generate planner for 2025
+planner = generate_weekly_planner(year=2025, num_weeks=52)
+planner.publish(output_dir="weekly_planner_output")
+```
+
+Features:
+- 📅 One page per week with 7 day boxes (Monday-Sunday)
+- 📝 Large weekly notes section
+- 🎨 Beautiful gradient styling
+- 🖨️ Print-friendly design
+- ✅ Correct dates for any year
+
 ---
 
-For a full example, see [`demo.py`](./demo.py) in this repository.
+For more examples, see the example files in this repository.
