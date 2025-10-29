@@ -1,6 +1,7 @@
 import os
 import shutil
 import uuid
+import re
 import pandas as pd
 import plotly.graph_objects as go
 from dominate import document
@@ -437,7 +438,6 @@ class Directory:
             # Remove special characters
             slug = "".join(c for c in slug if c.isalnum() or c == "-")
             # Clean up multiple consecutive hyphens
-            import re
             slug = re.sub(r'-+', '-', slug)
             # Remove leading/trailing hyphens
             slug = slug.strip("-")
@@ -481,7 +481,6 @@ class Directory:
             dashboard_dir (str): Path to the dashboard output directory
             slug (str): The slug of the dashboard
         """
-        import re
         index_path = os.path.join(dashboard_dir, "index.html")
         if not os.path.exists(index_path):
             return
