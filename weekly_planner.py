@@ -48,13 +48,14 @@ def generate_weekly_planner(year=None, num_weeks=52):
         page_width=1000
     )
     
-    # Start from the first Monday of the year (or close to it)
+    # Start from the first Monday of the year
     jan1 = datetime(year, 1, 1)
     # Find the first Monday (weekday() returns 0 for Monday, 6 for Sunday)
-    # Calculate days until next Monday: (7 - current_weekday) % 7
-    # If jan1 is Monday (0), result is 0 (already Monday)
-    # If jan1 is Tuesday (1), result is 6 (wait 6 days)
-    # If jan1 is Sunday (6), result is 1 (wait 1 day)
+    # Formula: (0 - jan1.weekday()) % 7 calculates days to add to reach Monday
+    # Examples:
+    #   - If jan1 is Monday (0): (0 - 0) % 7 = 0 (already Monday)
+    #   - If jan1 is Tuesday (1): (0 - 1) % 7 = 6 (add 6 days to reach next Monday)
+    #   - If jan1 is Sunday (6): (0 - 6) % 7 = 1 (add 1 day to reach next Monday)
     days_to_monday = (0 - jan1.weekday()) % 7
     first_monday = jan1 + timedelta(days=days_to_monday)
     
