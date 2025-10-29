@@ -40,6 +40,13 @@ pip install staticdash
 
 [View the latest demo dashboard](https://staticdash.github.io/staticdash/)
 
+## Examples
+
+This repository includes two example dashboards that demonstrate staticdash capabilities:
+
+- **Tutorial Dashboard:** [View tutorial_output/index.html](https://staticdash.github.io/staticdash/tutorial_output/index.html) - A comprehensive tutorial showing all staticdash features
+- **Directory Example:** [View directory_out/index.html](https://staticdash.github.io/staticdash/directory_out/index.html) - Demonstrates the Directory class for aggregating multiple dashboards
+
 ---
 
 For a full example, see [`demo.py`](./demo.py) in this repository.

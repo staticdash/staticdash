@@ -196,3 +196,5 @@ cython_debug/
 # Tutorial and demo output directories
 tutorial_output/
 output/
+directory_out/
+gh-pages/
