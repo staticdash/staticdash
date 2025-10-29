@@ -160,6 +160,8 @@ class Page(AbstractPage):
                     inherited_marking=effective_marking,
                     inherited_distribution=effective_distribution
                 )
+            elif kind == "raw_html":
+                elem = div(raw_util(content))
             if el_width is not None:
                 elem = div(elem, style=style)
                 elem = div(elem, style=outer_style)
@@ -240,6 +242,8 @@ class MiniPage(AbstractPage):
                     inherited_marking=inherited_marking,
                     inherited_distribution=inherited_distribution
                 )
+            elif kind == "raw_html":
+                elem = div(raw_util(content))
             if el_width is not None:
                 elem = div(elem, style=style)
                 elem = div(elem, style=outer_style)
