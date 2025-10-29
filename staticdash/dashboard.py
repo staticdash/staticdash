@@ -401,3 +401,221 @@ class Dashboard:
 
         with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
             f.write(str(index_doc))
+
+
+class Directory:
+    """
+    A Directory aggregates multiple Dashboard instances and publishes them
+    as a landing page listing multiple dashboards. Each dashboard is published
+    into its own subfolder under the output directory.
+    """
+    
+    def __init__(self, title="Dashboard Directory", page_width=900):
+        """
+        Initialize a Directory.
+        
+        Args:
+            title (str): The title of the directory landing page
+            page_width (int): The default page width for the landing page
+        """
+        self.title = title
+        self.page_width = page_width
+        self.dashboards = []  # List of (slug, dashboard) tuples
+    
+    def add_dashboard(self, dashboard, slug=None):
+        """
+        Add a Dashboard instance to the directory.
+        
+        Args:
+            dashboard (Dashboard): The Dashboard instance to add
+            slug (str, optional): URL-friendly identifier for the dashboard.
+                                 If None, derived from dashboard title.
+        """
+        if slug is None:
+            # Generate slug from dashboard title
+            slug = dashboard.title.lower().replace(" ", "-")
+            # Remove special characters
+            slug = "".join(c for c in slug if c.isalnum() or c == "-")
+        
+        self.dashboards.append((slug, dashboard))
+    
+    def publish(self, output_dir="output"):
+        """
+        Publish the directory landing page and all dashboards.
+        
+        Creates a landing page (index.html) that links to each dashboard,
+        and publishes each dashboard into its own subfolder.
+        
+        Args:
+            output_dir (str): The output directory path
+        """
+        output_dir = os.path.abspath(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Copy assets to the root output directory
+        assets_src = os.path.join(os.path.dirname(__file__), "assets")
+        assets_dst = os.path.join(output_dir, "assets")
+        shutil.copytree(assets_src, assets_dst, dirs_exist_ok=True)
+        
+        # Publish each dashboard to its own subfolder
+        for slug, dashboard in self.dashboards:
+            dashboard_dir = os.path.join(output_dir, slug)
+            dashboard.publish(output_dir=dashboard_dir)
+            
+            # Add a "Back to Directory" link to each dashboard's index page
+            self._add_back_link(dashboard_dir, slug)
+        
+        # Create the landing page
+        self._create_landing_page(output_dir)
+    
+    def _add_back_link(self, dashboard_dir, slug):
+        """
+        Add a navigation link back to the directory landing page in the dashboard.
+        
+        Args:
+            dashboard_dir (str): Path to the dashboard output directory
+            slug (str): The slug of the dashboard
+        """
+        import re
+        index_path = os.path.join(dashboard_dir, "index.html")
+        if not os.path.exists(index_path):
+            return
+        
+        # Read the existing index.html
+        with open(index_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Add a back link in the sidebar footer
+        # Replace the sidebar-footer section with one that includes a back link
+        back_link = '<div id="sidebar-footer"><a href="../index.html">← Back to Directory</a></div>'
+        
+        # Find and replace the sidebar-footer
+        pattern = r'<div id="sidebar-footer">.*?</div>'
+        content = re.sub(pattern, back_link, content, flags=re.DOTALL)
+        
+        # Write back the modified content
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        
+        # Also update all page HTML files to have the back link
+        pages_dir = os.path.join(dashboard_dir, "pages")
+        if os.path.exists(pages_dir):
+            for page_file in os.listdir(pages_dir):
+                if page_file.endswith(".html"):
+                    page_path = os.path.join(pages_dir, page_file)
+                    with open(page_path, "r", encoding="utf-8") as f:
+                        page_content = f.read()
+                    
+                    # For pages, the back link needs to go up two levels
+                    back_link_pages = '<div id="sidebar-footer"><a href="../../index.html">← Back to Directory</a></div>'
+                    page_content = re.sub(pattern, back_link_pages, page_content, flags=re.DOTALL)
+                    
+                    with open(page_path, "w", encoding="utf-8") as f:
+                        f.write(page_content)
+    
+    def _create_landing_page(self, output_dir):
+        """
+        Create the landing page HTML that lists all dashboards.
+        
+        Args:
+            output_dir (str): Path to the output directory
+        """
+        doc = document(title=self.title)
+        
+        # Add CSS and basic styling
+        with doc.head:
+            link(rel="stylesheet", href="assets/css/style.css")
+            raw_util("""
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                    margin: 0;
+                    padding: 0;
+                    background-color: #f5f5f5;
+                }
+                .directory-container {
+                    max-width: """ + str(self.page_width) + """px;
+                    margin: 0 auto;
+                    padding: 40px 20px;
+                }
+                .directory-header {
+                    text-align: center;
+                    margin-bottom: 50px;
+                }
+                .directory-header h1 {
+                    font-size: 2.5em;
+                    margin-bottom: 10px;
+                    color: #333;
+                }
+                .directory-header p {
+                    font-size: 1.2em;
+                    color: #666;
+                }
+                .dashboard-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                    gap: 30px;
+                    margin-top: 30px;
+                }
+                .dashboard-card {
+                    background: white;
+                    border-radius: 8px;
+                    padding: 30px;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                    text-decoration: none;
+                    color: inherit;
+                    display: block;
+                }
+                .dashboard-card:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+                }
+                .dashboard-card h2 {
+                    margin: 0 0 10px 0;
+                    font-size: 1.5em;
+                    color: #2c3e50;
+                }
+                .dashboard-card p {
+                    margin: 0;
+                    color: #7f8c8d;
+                    font-size: 0.95em;
+                }
+                .dashboard-arrow {
+                    display: inline-block;
+                    margin-left: 5px;
+                    transition: transform 0.2s;
+                }
+                .dashboard-card:hover .dashboard-arrow {
+                    transform: translateX(5px);
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 60px;
+                    padding: 20px;
+                    color: #999;
+                    font-size: 0.9em;
+                }
+            </style>
+            """)
+        
+        with doc:
+            with div(cls="directory-container"):
+                with div(cls="directory-header"):
+                    h1(self.title)
+                    p(f"Explore {len(self.dashboards)} dashboard{'s' if len(self.dashboards) != 1 else ''}")
+                
+                with div(cls="dashboard-grid"):
+                    for slug, dashboard in self.dashboards:
+                        with a(href=f"{slug}/index.html", cls="dashboard-card"):
+                            h2(dashboard.title)
+                            num_pages = len(dashboard.pages)
+                            p(f"{num_pages} page{'s' if num_pages != 1 else ''} ")
+                            span("→", cls="dashboard-arrow")
+                
+                with div(cls="footer"):
+                    p("Produced by staticdash")
+        
+        # Write the landing page
+        with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
+            f.write(str(doc))
