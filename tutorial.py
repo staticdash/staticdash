@@ -125,3 +125,26 @@ dashboard.publish(output_dir="tutorial_output")
 #     author="Brian Day",
 #     affiliation="StaticDash Inc."
 # )
+
+# --- Directory Example ---
+# Demonstrates using the Directory class to aggregate multiple dashboards
+from staticdash import Directory
+
+# Create a second dashboard for the directory example
+dashboard2 = Dashboard("Sales Analysis", marking="Q4 2024 - Internal")
+sales_page = Page("overview", "Sales Overview")
+sales_page.add_text("This dashboard contains sales analysis for Q4 2024.")
+sales_page.add_header("Key Metrics", level=2)
+sales_data = pd.DataFrame({
+    "Region": ["North", "South", "East", "West"],
+    "Revenue": [125000, 98000, 110000, 87000],
+    "Growth": ["12%", "8%", "15%", "5%"]
+})
+sales_page.add_table(sales_data)
+dashboard2.add_page(sales_page)
+
+# Create a directory and add both dashboards
+directory = Directory(title="My Dashboard Collection")
+directory.add_dashboard(dashboard, slug="tutorial")
+directory.add_dashboard(dashboard2, slug="sales")
+directory.publish(output_dir="output")
