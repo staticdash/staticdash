@@ -27,11 +27,17 @@ jobs:
       - name: Build tutorial
         run: python tutorial.py
 
+      - name: Prepare GitHub Pages deployment
+        run: |
+          mkdir -p gh-pages
+          cp -r tutorial_output gh-pages/
+          cp -r directory_out gh-pages/
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./tutorial_output
+          publish_dir: ./gh-pages
 
       - name: Increment version
         id: increment_version
