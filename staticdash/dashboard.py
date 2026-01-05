@@ -10,6 +10,7 @@ from dominate.util import raw as raw_util
 import html
 import io
 import base64
+from matplotlib import rc_context
 
 class AbstractPage:
     def __init__(self):
@@ -119,11 +120,32 @@ class Page(AbstractPage):
                 fig = content
                 if hasattr(fig, "to_html"):
                     # Use local Plotly loaded in <head>
-                    elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})))
+                    # Ensure the figure uses a robust font family so minus signs and other
+                    # glyphs render correctly in the browser (some system fonts lack U+2212)
+                    try:
+                        font_family = None
+                        if getattr(fig, 'layout', None) and getattr(fig.layout, 'font', None):
+                            font_family = getattr(fig.layout.font, 'family', None)
+                        if not font_family:
+                            fig.update_layout(font_family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif')
+                    except Exception:
+                        # Be defensive: don't fail rendering if layout manipulation isn't available
+                        pass
+                    # Render Plotly HTML and replace Unicode minus (U+2212) with ASCII hyphen-minus
+                    # to avoid rendering issues when a user's font lacks the U+2212 glyph.
+                    try:
+                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
+                        if '\u2212' in plotly_html or '−' in plotly_html:
+                            plotly_html = plotly_html.replace('−', '-')
+                        elem = div(raw_util(plotly_html))
+                    except Exception as e:
+                        elem = div(f"Plotly figure could not be rendered: {e}")
                 else:
                     try:
                         buf = io.BytesIO()
-                        fig.savefig(buf, format="png", bbox_inches="tight")
+                        # Ensure we use ASCII hyphen-minus for negative ticks when saving
+                        with rc_context({"axes.unicode_minus": False}):
+                            fig.savefig(buf, format="png", bbox_inches="tight")
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")
                         buf.close()
@@ -202,11 +224,29 @@ class MiniPage(AbstractPage):
                 fig = content
                 if hasattr(fig, "to_html"):
                     # Use local Plotly loaded in <head>
-                    elem = div(raw_util(fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})))
+                    # Ensure the figure uses a robust font family so minus signs and other
+                    # glyphs render correctly in the browser (some system fonts lack U+2212)
+                    try:
+                        font_family = None
+                        if getattr(fig, 'layout', None) and getattr(fig.layout, 'font', None):
+                            font_family = getattr(fig.layout.font, 'family', None)
+                        if not font_family:
+                            fig.update_layout(font_family='-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif')
+                    except Exception:
+                        pass
+                    try:
+                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
+                        if '\u2212' in plotly_html or '−' in plotly_html:
+                            plotly_html = plotly_html.replace('−', '-')
+                        elem = div(raw_util(plotly_html))
+                    except Exception as e:
+                        elem = div(f"Plotly figure could not be rendered: {e}")
                 else:
                     try:
                         buf = io.BytesIO()
-                        fig.savefig(buf, format="png", bbox_inches="tight")
+                        # Ensure we use ASCII hyphen-minus for negative ticks when saving
+                        with rc_context({"axes.unicode_minus": False}):
+                            fig.savefig(buf, format="png", bbox_inches="tight")
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")
                         buf.close()
