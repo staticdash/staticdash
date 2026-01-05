@@ -10,7 +10,7 @@ from dominate.util import raw as raw_util
 import html
 import io
 import base64
-from matplotlib import rc_context
+# Matplotlib is optional (provided via extras); import rc_context lazily where needed
 
 class AbstractPage:
     def __init__(self):
@@ -140,9 +140,27 @@ class Page(AbstractPage):
                         elem = div(f"Plotly figure could not be rendered: {e}")
                 else:
                     try:
-                        buf = io.BytesIO()
-                        # Ensure we use ASCII hyphen-minus for negative ticks when saving
-                        with rc_context({"axes.unicode_minus": False}):
+                                            try:
+                                                from matplotlib import rc_context
+                                            except Exception:
+                                                rc_context = None
+
+                                            if rc_context is not None:
+                                                with rc_context({"axes.unicode_minus": False}):
+                                                    fig.savefig(buf, format="png", bbox_inches="tight")
+                                            else:
+                                                # Fallback: save without the unicode-minus context
+                                                fig.savefig(buf, format="png", bbox_inches="tight")
+                        # Matplotlib may not be installed in minimal installs; import lazily
+                        try:
+                        except Exception:
+                            rc_context = None
+
+                        if rc_context is not None:
+                            with rc_context({"axes.unicode_minus": False}):
+                                fig.savefig(buf, format="png", bbox_inches="tight")
+                        else:
+                            # Fallback: save without the unicode-minus context
                             fig.savefig(buf, format="png", bbox_inches="tight")
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")
@@ -240,8 +258,17 @@ class MiniPage(AbstractPage):
                 else:
                     try:
                         buf = io.BytesIO()
-                        # Ensure we use ASCII hyphen-minus for negative ticks when saving
-                        with rc_context({"axes.unicode_minus": False}):
+                        # Matplotlib may not be installed in minimal installs; import lazily
+                        try:
+                            from matplotlib import rc_context
+                        except Exception:
+                            rc_context = None
+
+                        if rc_context is not None:
+                            with rc_context({"axes.unicode_minus": False}):
+                                fig.savefig(buf, format="png", bbox_inches="tight")
+                        else:
+                            # Fallback: save without the unicode-minus context
                             fig.savefig(buf, format="png", bbox_inches="tight")
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")
