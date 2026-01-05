@@ -153,6 +153,16 @@ body {
   width: 100%;
 }
 
+/* Ensure Plotly SVG text inherits a robust font stack so glyphs (e.g., minus) render */
+.plotly {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.plotly svg text,
+.plotly .main-svg text {
+  font-family: inherit;
+  -webkit-font-smoothing: antialiased;
+}
+
 .plot-container .plotly-graph-div {
   width: 100% !important;
   height: auto !important;
