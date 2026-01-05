@@ -135,8 +135,6 @@ class Page(AbstractPage):
                     # to avoid rendering issues when a user's font lacks the U+2212 glyph.
                     try:
                         plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
-                        if '\u2212' in plotly_html or '−' in plotly_html:
-                            plotly_html = plotly_html.replace('−', '-')
                         elem = div(raw_util(plotly_html))
                     except Exception as e:
                         elem = div(f"Plotly figure could not be rendered: {e}")
@@ -236,8 +234,6 @@ class MiniPage(AbstractPage):
                         pass
                     try:
                         plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
-                        if '\u2212' in plotly_html or '−' in plotly_html:
-                            plotly_html = plotly_html.replace('−', '-')
                         elem = div(raw_util(plotly_html))
                     except Exception as e:
                         elem = div(f"Plotly figure could not be rendered: {e}")
@@ -351,6 +347,9 @@ class Dashboard:
         shutil.copytree(assets_src, assets_dst, dirs_exist_ok=True)
 
         def _add_head_assets(head, rel_prefix, effective_width):
+            # Ensure pages declare UTF-8 to avoid character misinterpretation
+            head.add(raw_util('<meta charset="utf-8" />'))
+            head.add(raw_util('<meta name="viewport" content="width=device-width, initial-scale=1" />'))
             # Your CSS/JS
             head.add(link(rel="stylesheet", href=f"{rel_prefix}assets/css/style.css"))
             head.add(script(type="text/javascript", src=f"{rel_prefix}assets/js/script.js"))
@@ -568,6 +567,8 @@ class Directory:
         
         # Add CSS and basic styling
         with doc.head:
+            # Ensure charset is declared for the landing page too
+            doc.head.add(raw_util('<meta charset="utf-8" />'))
             link(rel="stylesheet", href="assets/css/style.css")
             raw_util("""
             <style>
