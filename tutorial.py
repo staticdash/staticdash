@@ -54,9 +54,7 @@ This demonstrates paragraph splitting.
 
 Blank lines between text blocks create separate paragraphs automatically.
 
-You can include inline math like $E = mc^2$ or display math like $$\\int_0^\\infty e^{-x} dx = 1$$.
-
-The math expressions are preserved during paragraph processing.
+Math expressions and other content are preserved during processing.
 """)
 dashboard.add_page(page_headers)
 

@@ -10,7 +10,8 @@ from dominate.util import raw as raw_util
 import html
 import io
 import base64
-# Matplotlib is optional (provided via extras); import rc_context lazily where needed
+import matplotlib
+from matplotlib import rc_context
 
 def split_paragraphs_preserving_math(text):
     """
@@ -173,16 +174,7 @@ class Page(AbstractPage):
                         elem = div(f"Plotly figure could not be rendered: {e}")
                 else:
                     try:
-                        try:
-                            from matplotlib import rc_context
-                        except Exception:
-                            rc_context = None
-
-                        if rc_context is not None:
-                            with rc_context({"axes.unicode_minus": False}):
-                                fig.savefig(buf, format="png", bbox_inches="tight")
-                        else:
-                            # Fallback: save without the unicode-minus context
+                        with rc_context({"axes.unicode_minus": False}):
                             fig.savefig(buf, format="png", bbox_inches="tight")
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")
@@ -285,16 +277,7 @@ class MiniPage(AbstractPage):
                     try:
                         buf = io.BytesIO()
                         # Matplotlib may not be installed in minimal installs; import lazily
-                        try:
-                            from matplotlib import rc_context
-                        except Exception:
-                            rc_context = None
-
-                        if rc_context is not None:
-                            with rc_context({"axes.unicode_minus": False}):
-                                fig.savefig(buf, format="png", bbox_inches="tight")
-                        else:
-                            # Fallback: save without the unicode-minus context
+                        with rc_context({"axes.unicode_minus": False}):
                             fig.savefig(buf, format="png", bbox_inches="tight")
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")

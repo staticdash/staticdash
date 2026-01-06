@@ -16,17 +16,17 @@ dependencies = [
   "plotly",
   "pandas",
   "dominate",
+  "matplotlib",
 ]
 
 [project.optional-dependencies]
 # Optional plotting backends and export tools
-matplotlib = ["matplotlib"]
 images = ["kaleido"]
 # PDF export (reportlab) was removed from defaults because it's not referenced from the package code.
 # If you need PDF export, add reportlab explicitly: `pip install "staticdash[pdf]"` once the feature is implemented.
 
 # Convenience bundle for full feature set
-all = ["matplotlib", "kaleido"]
+all = ["kaleido"]
 
 [tool.setuptools]
 packages = ["staticdash"]
