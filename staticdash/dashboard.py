@@ -12,6 +12,35 @@ import io
 import base64
 # Matplotlib is optional (provided via extras); import rc_context lazily where needed
 
+def split_paragraphs_preserving_math(text):
+    """
+    Split text into paragraphs on double newlines, preserving math expressions.
+    Assumes math is in $...$ (inline) or $$...$$ (display) format.
+    """
+    math_blocks = []
+    
+    # Replace math with placeholders
+    def replace_math(match):
+        math_blocks.append(match.group(0))
+        return f"__MATH_BLOCK_{len(math_blocks)-1}__"
+    
+    # Handle display math first ($$...$$), then inline ($...$)
+    text = re.sub(r'\$\$([^$]+)\$\$', replace_math, text, flags=re.DOTALL)
+    text = re.sub(r'\$([^$]+)\$', replace_math, text, flags=re.DOTALL)
+    
+    # Split on double newlines
+    paragraphs = text.split('\n\n')
+    
+    # Restore math in each paragraph
+    restored_paragraphs = []
+    for para in paragraphs:
+        for i, block in enumerate(math_blocks):
+            para = para.replace(f"__MATH_BLOCK_{i}__", block)
+        restored_paragraphs.append(para.strip())
+    
+    # Filter out empty paragraphs
+    return [para for para in restored_paragraphs if para]
+
 class AbstractPage:
     def __init__(self):
         self.elements = []
@@ -111,7 +140,11 @@ class Page(AbstractPage):
                 outer_style = "display: flex; justify-content: center; margin: 0 auto;"
             elem = None
             if kind == "text":
-                elem = p(content)
+                paragraphs = split_paragraphs_preserving_math(content)
+                if paragraphs:
+                    elem = div(*[p(para) for para in paragraphs])
+                else:
+                    elem = p(content)
             elif kind == "header":
                 text, level = content
                 header_tag = {1: h1, 2: h2, 3: h3, 4: h4}[level]
@@ -231,7 +264,11 @@ class MiniPage(AbstractPage):
                 outer_style = "display: flex; justify-content: center; margin: 0 auto;"
             elem = None
             if kind == "text":
-                elem = p(content)
+                paragraphs = split_paragraphs_preserving_math(content)
+                if paragraphs:
+                    elem = div(*[p(para) for para in paragraphs])
+                else:
+                    elem = p(content)
             elif kind == "header":
                 text, level = content
                 header_tag = {1: h1, 2: h2, 3: h3, 4: h4}[level]
