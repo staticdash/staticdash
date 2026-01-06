@@ -49,6 +49,15 @@ page_headers.add_header("Header Level 2", level=2)
 page_headers.add_header("Header Level 3", level=3)
 page_headers.add_header("Header Level 4", level=4)
 page_headers.add_text("This is a paragraph of text. Headers help organize your dashboard and provide structure.")
+page_headers.add_text("""
+This demonstrates paragraph splitting.
+
+Blank lines between text blocks create separate paragraphs automatically.
+
+You can include inline math like $E = mc^2$ or display math like $$\\int_0^\\infty e^{-x} dx = 1$$.
+
+The math expressions are preserved during paragraph processing.
+""")
 dashboard.add_page(page_headers)
 
 # --- 5. Plotly and Matplotlib Figures ---

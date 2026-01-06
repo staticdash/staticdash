@@ -173,19 +173,8 @@ class Page(AbstractPage):
                         elem = div(f"Plotly figure could not be rendered: {e}")
                 else:
                     try:
-                                            try:
-                                                from matplotlib import rc_context
-                                            except Exception:
-                                                rc_context = None
-
-                                            if rc_context is not None:
-                                                with rc_context({"axes.unicode_minus": False}):
-                                                    fig.savefig(buf, format="png", bbox_inches="tight")
-                                            else:
-                                                # Fallback: save without the unicode-minus context
-                                                fig.savefig(buf, format="png", bbox_inches="tight")
-                        # Matplotlib may not be installed in minimal installs; import lazily
                         try:
+                            from matplotlib import rc_context
                         except Exception:
                             rc_context = None
 
