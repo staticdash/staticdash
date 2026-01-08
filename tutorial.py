@@ -68,7 +68,8 @@ fig_plotly = px.scatter(
     df, x="gdpPercap", y="lifeExp", size="pop", color="continent",
     hover_name="country", log_x=True, size_max=60, title="Plotly: GDP vs Life Expectancy (2007)"
 )
-page_plot.add_plot(fig_plotly)
+# Provide an explicit pixel height/width so the Plotly container renders correctly
+page_plot.add_plot(fig_plotly, height=400, width_px=700)
 
 x = np.linspace(0, 10, 100)
 y = np.sin(x)
@@ -78,7 +79,8 @@ ax.set_title("Matplotlib: Sine Wave")
 ax.set_xlabel("X-axis")
 ax.set_ylabel("Y-axis")
 ax.legend()
-page_plot.add_plot(fig_matplotlib)
+# Matplotlib static image with explicit pixel size
+page_plot.add_plot(fig_matplotlib, height=300, width_px=600)
 
 dashboard.add_page(page_plot)
 

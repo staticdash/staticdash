@@ -54,8 +54,13 @@ class AbstractPage:
     def add_text(self, text, width=None):
         self.elements.append(("text", text, width))
 
-    def add_plot(self, plot, width=None):
-        self.elements.append(("plot", plot, width))
+    def add_plot(self, plot, width=None, height=None, width_px=None, align="center"):
+        # Keep backward-compatible: `width` is a fraction (0..1) of page width.
+        # `height` is pixels (existing behavior). New optional `width_px`
+        # (pixels) can be supplied to control plot width. `align` controls
+        # horizontal alignment: 'left', 'center' (default), or 'right'.
+        # We store a tuple (plot, height_px, width_px, align) for forward-compatibility.
+        self.elements.append(("plot", (plot, height, width_px, align), width))
 
     def add_table(self, df, table_id=None, sortable=True, width=None):
         self.elements.append(("table", df, width))
@@ -151,7 +156,23 @@ class Page(AbstractPage):
                 header_tag = {1: h1, 2: h2, 3: h3, 4: h4}[level]
                 elem = header_tag(text)
             elif kind == "plot":
-                fig = content
+                # content may be stored as (figure, height), (figure, height, width_px)
+                # or (figure, height, width_px, align)
+                specified_height = None
+                specified_width_px = None
+                specified_align = "center"
+                if isinstance(content, (list, tuple)):
+                    if len(content) == 4:
+                        fig, specified_height, specified_width_px, specified_align = content
+                    elif len(content) == 3:
+                        fig, specified_height, specified_width_px = content
+                    elif len(content) == 2:
+                        fig, specified_height = content
+                    else:
+                        fig = content
+                else:
+                    fig = content
+
                 if hasattr(fig, "to_html"):
                     # Use local Plotly loaded in <head>
                     # Ensure the figure uses a robust font family so minus signs and other
@@ -165,26 +186,128 @@ class Page(AbstractPage):
                     except Exception:
                         # Be defensive: don't fail rendering if layout manipulation isn't available
                         pass
-                    # Render Plotly HTML and replace Unicode minus (U+2212) with ASCII hyphen-minus
-                    # to avoid rendering issues when a user's font lacks the U+2212 glyph.
+
                     try:
-                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
-                        elem = div(raw_util(plotly_html))
+                        # Temporarily set layout height/width if specified (pixels)
+                        orig_height = None
+                        orig_width = None
+                        try:
+                            orig_height = getattr(fig.layout, 'height', None)
+                        except Exception:
+                            orig_height = None
+                        try:
+                            orig_width = getattr(fig.layout, 'width', None)
+                        except Exception:
+                            orig_width = None
+
+                        try:
+                            if specified_height is not None:
+                                fig.update_layout(height=specified_height)
+                            if specified_width_px is not None:
+                                fig.update_layout(width=specified_width_px)
+                        except Exception:
+                            pass
+
+                        # If a local vendored Plotly exists, rely on the head script.
+                        # Otherwise include Plotly from CDN so the inline newPlot call works.
+                        vendor_plotly = os.path.join(os.path.dirname(__file__), "assets", "vendor", "plotly", "plotly.min.js")
+                        include_plotly = False
+                        if not os.path.exists(vendor_plotly):
+                            include_plotly = "cdn"
+                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=include_plotly, config={'responsive': True})
+
+                        # Wrap the Plotly HTML in a container with explicit pixel sizing
+                        container_style = "width:100%;"
+                        if specified_width_px is not None:
+                            container_style = f"width:{specified_width_px}px;"
+                        if specified_height is not None:
+                            container_style = container_style + f" height:{specified_height}px;"
+
+                        plot_wrapped = f'<div style="{container_style}">{plotly_html}</div>'
+                        # Apply alignment wrapper
+                        if specified_align not in ("left", "right", "center"):
+                            specified_align = "center"
+                        if specified_align == "center":
+                            align_style = "display:flex; justify-content:center; align-items:center;"
+                        elif specified_align == "left":
+                            align_style = "display:flex; justify-content:flex-start; align-items:center;"
+                        else:
+                            align_style = "display:flex; justify-content:flex-end; align-items:center;"
+
+                        outer = f'<div style="{align_style}">{plot_wrapped}</div>'
+                        elem = div(raw_util(outer))
+
+                        # restore original height/width if we changed them
+                        try:
+                            if specified_height is not None:
+                                fig.update_layout(height=orig_height)
+                            if specified_width_px is not None:
+                                fig.update_layout(width=orig_width)
+                        except Exception:
+                            pass
                     except Exception as e:
                         elem = div(f"Plotly figure could not be rendered: {e}")
                 else:
+                    # Robust Matplotlib -> PNG path. Ensure `buf` exists and is closed.
+                    buf = io.BytesIO()
                     try:
+                        # If pixel width/height specified, attempt to adjust figure size
+                        orig_size = None
+                        try:
+                            dpi = fig.get_dpi()
+                        except Exception:
+                            dpi = None
+                        try:
+                            if dpi is not None and (specified_height is not None or specified_width_px is not None):
+                                orig_size = fig.get_size_inches()
+                                new_w = orig_size[0]
+                                new_h = orig_size[1]
+                                if specified_width_px is not None:
+                                    new_w = specified_width_px / dpi
+                                if specified_height is not None:
+                                    new_h = specified_height / dpi
+                                fig.set_size_inches(new_w, new_h)
+                        except Exception:
+                            orig_size = None
+
                         with rc_context({"axes.unicode_minus": False}):
                             fig.savefig(buf, format="png", bbox_inches="tight")
+
+                        # restore original size if changed
+                        try:
+                            if orig_size is not None:
+                                fig.set_size_inches(orig_size)
+                        except Exception:
+                            pass
+
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")
-                        buf.close()
+                        img_style = "max-width:100%;"
+                        if specified_height is not None:
+                            img_style = img_style + f" height:{specified_height}px;"
+                        if specified_width_px is not None:
+                            img_style = img_style + f" width:{specified_width_px}px;"
+
+                        if specified_align not in ("left", "right", "center"):
+                            specified_align = "center"
+                        if specified_align == "center":
+                            align_style = "display:flex; justify-content:center; align-items:center;"
+                        elif specified_align == "left":
+                            align_style = "display:flex; justify-content:flex-start; align-items:center;"
+                        else:
+                            align_style = "display:flex; justify-content:flex-end; align-items:center;"
+
                         elem = div(
-                            raw_util(f'<img src="data:image/png;base64,{img_base64}" style="max-width:100%;">'),
-                            style="display: flex; justify-content: center; align-items: center;"
+                            raw_util(f'<img src="data:image/png;base64,{img_base64}" style="{img_style}">'),
+                            style=align_style
                         )
                     except Exception as e:
                         elem = div(f"Matplotlib figure could not be rendered: {e}")
+                    finally:
+                        try:
+                            buf.close()
+                        except Exception:
+                            pass
             elif kind == "table":
                 df = content
                 try:
@@ -255,7 +378,19 @@ class MiniPage(AbstractPage):
                 header_tag = {1: h1, 2: h2, 3: h3, 4: h4}[level]
                 elem = header_tag(text)
             elif kind == "plot":
-                fig = content
+                # content may be stored as (figure, height) or (figure, height, width_px)
+                specified_height = None
+                specified_width_px = None
+                if isinstance(content, (list, tuple)):
+                    if len(content) == 3:
+                        fig, specified_height, specified_width_px = content
+                    elif len(content) == 2:
+                        fig, specified_height = content
+                    else:
+                        fig = content
+                else:
+                    fig = content
+
                 if hasattr(fig, "to_html"):
                     # Use local Plotly loaded in <head>
                     # Ensure the figure uses a robust font family so minus signs and other
@@ -269,25 +404,115 @@ class MiniPage(AbstractPage):
                     except Exception:
                         pass
                     try:
-                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
-                        elem = div(raw_util(plotly_html))
+                        orig_height = None
+                        orig_width = None
+                        try:
+                            orig_height = getattr(fig.layout, 'height', None)
+                        except Exception:
+                            orig_height = None
+                        try:
+                            orig_width = getattr(fig.layout, 'width', None)
+                        except Exception:
+                            orig_width = None
+
+                        try:
+                            if specified_height is not None:
+                                fig.update_layout(height=specified_height)
+                            if specified_width_px is not None:
+                                fig.update_layout(width=specified_width_px)
+                        except Exception:
+                            pass
+
+                        vendor_plotly = os.path.join(os.path.dirname(__file__), "assets", "vendor", "plotly", "plotly.min.js")
+                        include_plotly = False
+                        if not os.path.exists(vendor_plotly):
+                            include_plotly = "cdn"
+                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=include_plotly, config={'responsive': True})
+                        container_style = "width:100%;"
+                        if specified_width_px is not None:
+                            container_style = f"width:{specified_width_px}px;"
+                        if specified_height is not None:
+                            container_style = container_style + f" height:{specified_height}px;"
+                        plot_wrapped = f'<div style="{container_style}">{plotly_html}</div>'
+                        if specified_align not in ("left", "right", "center"):
+                            specified_align = "center"
+                        if specified_align == "center":
+                            align_style = "display:flex; justify-content:center; align-items:center;"
+                        elif specified_align == "left":
+                            align_style = "display:flex; justify-content:flex-start; align-items:center;"
+                        else:
+                            align_style = "display:flex; justify-content:flex-end; align-items:center;"
+                        outer = f'<div style="{align_style}">{plot_wrapped}</div>'
+                        elem = div(raw_util(outer))
+
+                        try:
+                            if specified_height is not None:
+                                fig.update_layout(height=orig_height)
+                            if specified_width_px is not None:
+                                fig.update_layout(width=orig_width)
+                        except Exception:
+                            pass
                     except Exception as e:
                         elem = div(f"Plotly figure could not be rendered: {e}")
                 else:
+                    # Robust Matplotlib -> PNG path. Ensure `buf` exists and is closed.
+                    buf = io.BytesIO()
                     try:
-                        buf = io.BytesIO()
-                        # Matplotlib may not be installed in minimal installs; import lazily
+                        # If pixel width/height specified, attempt to adjust figure size
+                        orig_size = None
+                        try:
+                            dpi = fig.get_dpi()
+                        except Exception:
+                            dpi = None
+                        try:
+                            if dpi is not None and (specified_height is not None or specified_width_px is not None):
+                                orig_size = fig.get_size_inches()
+                                new_w = orig_size[0]
+                                new_h = orig_size[1]
+                                if specified_width_px is not None:
+                                    new_w = specified_width_px / dpi
+                                if specified_height is not None:
+                                    new_h = specified_height / dpi
+                                fig.set_size_inches(new_w, new_h)
+                        except Exception:
+                            orig_size = None
+
                         with rc_context({"axes.unicode_minus": False}):
                             fig.savefig(buf, format="png", bbox_inches="tight")
+
+                        # restore original size if changed
+                        try:
+                            if orig_size is not None:
+                                fig.set_size_inches(orig_size)
+                        except Exception:
+                            pass
+
                         buf.seek(0)
                         img_base64 = base64.b64encode(buf.read()).decode("utf-8")
-                        buf.close()
+                        img_style = "max-width:100%;"
+                        if specified_height is not None:
+                            img_style = img_style + f" height:{specified_height}px;"
+                        if specified_width_px is not None:
+                            img_style = img_style + f" width:{specified_width_px}px;"
+                        if specified_align not in ("left", "right", "center"):
+                            specified_align = "center"
+                        if specified_align == "center":
+                            align_style = "display:flex; justify-content:center; align-items:center;"
+                        elif specified_align == "left":
+                            align_style = "display:flex; justify-content:flex-start; align-items:center;"
+                        else:
+                            align_style = "display:flex; justify-content:flex-end; align-items:center;"
                         elem = div(
-                            raw_util(f'<img src="data:image/png;base64,{img_base64}" style="max-width:100%;">'),
-                            style="display: flex; justify-content: center; align-items: center;"
+                            raw_util(f'<img src="data:image/png;base64,{img_base64}" style="{img_style}">'),
+                            style=align_style
                         )
                     except Exception as e:
                         elem = div(f"Matplotlib figure could not be rendered: {e}")
+                    finally:
+                        try:
+                            buf.close()
+                        except Exception:
+                            pass
             elif kind == "table":
                 df = content
                 html_table = df.to_html(classes="table-hover table-striped", index=False, border=0, table_id=f"table-{index}", escape=False)
