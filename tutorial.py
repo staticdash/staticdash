@@ -69,7 +69,7 @@ fig_plotly = px.scatter(
     hover_name="country", log_x=True, size_max=60, title="Plotly: GDP vs Life Expectancy (2007)"
 )
 # Provide an explicit pixel height/width so the Plotly container renders correctly
-page_plot.add_plot(fig_plotly, height=400, width_px=700)
+page_plot.add_plot(fig_plotly, height=400, width=700)
 
 x = np.linspace(0, 10, 100)
 y = np.sin(x)
@@ -80,7 +80,7 @@ ax.set_xlabel("X-axis")
 ax.set_ylabel("Y-axis")
 ax.legend()
 # Matplotlib static image with explicit pixel size
-page_plot.add_plot(fig_matplotlib, height=300, width_px=600)
+page_plot.add_plot(fig_matplotlib, height=300, width=600)
 
 dashboard.add_page(page_plot)
 

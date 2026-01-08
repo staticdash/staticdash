@@ -54,13 +54,15 @@ class AbstractPage:
     def add_text(self, text, width=None):
         self.elements.append(("text", text, width))
 
-    def add_plot(self, plot, width=None, height=None, width_px=None, align="center"):
-        # Keep backward-compatible: `width` is a fraction (0..1) of page width.
-        # `height` is pixels (existing behavior). New optional `width_px`
-        # (pixels) can be supplied to control plot width. `align` controls
-        # horizontal alignment: 'left', 'center' (default), or 'right'.
-        # We store a tuple (plot, height_px, width_px, align) for forward-compatibility.
-        self.elements.append(("plot", (plot, height, width_px, align), width))
+    def add_plot(self, plot, el_width=None, height=None, width=None, align="center"):
+        # `el_width` is the fractional width (0..1) used for layout columns.
+        # `height` and `width` are pixel dimensions for the rendered figure/image.
+        # `align` controls horizontal alignment: 'left', 'center' (default), or 'right'.
+        # We store a tuple (plot, height, width, align) and keep `el_width` as
+        # the element-level fractional width for compatibility with page layout.
+        specified_height = height
+        specified_width = width
+        self.elements.append(("plot", (plot, specified_height, specified_width, align), el_width))
 
     def add_table(self, df, table_id=None, sortable=True, width=None):
         self.elements.append(("table", df, width))
@@ -156,16 +158,16 @@ class Page(AbstractPage):
                 header_tag = {1: h1, 2: h2, 3: h3, 4: h4}[level]
                 elem = header_tag(text)
             elif kind == "plot":
-                # content may be stored as (figure, height), (figure, height, width_px)
-                # or (figure, height, width_px, align)
+                # content may be stored as (figure, height), (figure, height, width)
+                # or (figure, height, width, align)
                 specified_height = None
-                specified_width_px = None
+                specified_width = None
                 specified_align = "center"
                 if isinstance(content, (list, tuple)):
                     if len(content) == 4:
-                        fig, specified_height, specified_width_px, specified_align = content
+                        fig, specified_height, specified_width, specified_align = content
                     elif len(content) == 3:
-                        fig, specified_height, specified_width_px = content
+                        fig, specified_height, specified_width = content
                     elif len(content) == 2:
                         fig, specified_height = content
                     else:
@@ -203,23 +205,22 @@ class Page(AbstractPage):
                         try:
                             if specified_height is not None:
                                 fig.update_layout(height=specified_height)
-                            if specified_width_px is not None:
-                                fig.update_layout(width=specified_width_px)
+                            if specified_width is not None:
+                                fig.update_layout(width=specified_width)
                         except Exception:
                             pass
 
                         # If a local vendored Plotly exists, rely on the head script.
                         # Otherwise include Plotly from CDN so the inline newPlot call works.
-                        vendor_plotly = os.path.join(os.path.dirname(__file__), "assets", "vendor", "plotly", "plotly.min.js")
-                        include_plotly = False
-                        if not os.path.exists(vendor_plotly):
-                            include_plotly = "cdn"
-                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=include_plotly, config={'responsive': True})
+                        # Always rely on the page-level Plotly include (head). Avoid
+                        # embedding another Plotly bundle inside each fragment which
+                        # can lead to multiple conflicting versions in the same page.
+                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
 
                         # Wrap the Plotly HTML in a container with explicit pixel sizing
                         container_style = "width:100%;"
-                        if specified_width_px is not None:
-                            container_style = f"width:{specified_width_px}px;"
+                        if specified_width is not None:
+                            container_style = f"width:{specified_width}px;"
                         if specified_height is not None:
                             container_style = container_style + f" height:{specified_height}px;"
 
@@ -241,7 +242,7 @@ class Page(AbstractPage):
                         try:
                             if specified_height is not None:
                                 fig.update_layout(height=orig_height)
-                            if specified_width_px is not None:
+                            if specified_width is not None:
                                 fig.update_layout(width=orig_width)
                         except Exception:
                             pass
@@ -258,12 +259,12 @@ class Page(AbstractPage):
                         except Exception:
                             dpi = None
                         try:
-                            if dpi is not None and (specified_height is not None or specified_width_px is not None):
+                            if dpi is not None and (specified_height is not None or specified_width is not None):
                                 orig_size = fig.get_size_inches()
                                 new_w = orig_size[0]
                                 new_h = orig_size[1]
-                                if specified_width_px is not None:
-                                    new_w = specified_width_px / dpi
+                                if specified_width is not None:
+                                    new_w = specified_width / dpi
                                 if specified_height is not None:
                                     new_h = specified_height / dpi
                                 fig.set_size_inches(new_w, new_h)
@@ -285,8 +286,8 @@ class Page(AbstractPage):
                         img_style = "max-width:100%;"
                         if specified_height is not None:
                             img_style = img_style + f" height:{specified_height}px;"
-                        if specified_width_px is not None:
-                            img_style = img_style + f" width:{specified_width_px}px;"
+                        if specified_width is not None:
+                            img_style = img_style + f" width:{specified_width}px;"
 
                         if specified_align not in ("left", "right", "center"):
                             specified_align = "center"
@@ -378,12 +379,15 @@ class MiniPage(AbstractPage):
                 header_tag = {1: h1, 2: h2, 3: h3, 4: h4}[level]
                 elem = header_tag(text)
             elif kind == "plot":
-                # content may be stored as (figure, height) or (figure, height, width_px)
+                # content may be stored as (figure, height, width, align)
                 specified_height = None
-                specified_width_px = None
+                specified_width = None
+                specified_align = "center"
                 if isinstance(content, (list, tuple)):
-                    if len(content) == 3:
-                        fig, specified_height, specified_width_px = content
+                    if len(content) == 4:
+                        fig, specified_height, specified_width, specified_align = content
+                    elif len(content) == 3:
+                        fig, specified_height, specified_width = content
                     elif len(content) == 2:
                         fig, specified_height = content
                     else:
@@ -418,19 +422,18 @@ class MiniPage(AbstractPage):
                         try:
                             if specified_height is not None:
                                 fig.update_layout(height=specified_height)
-                            if specified_width_px is not None:
-                                fig.update_layout(width=specified_width_px)
+                            if specified_width is not None:
+                                fig.update_layout(width=specified_width)
                         except Exception:
                             pass
 
-                        vendor_plotly = os.path.join(os.path.dirname(__file__), "assets", "vendor", "plotly", "plotly.min.js")
-                        include_plotly = False
-                        if not os.path.exists(vendor_plotly):
-                            include_plotly = "cdn"
-                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=include_plotly, config={'responsive': True})
+                        # Always rely on the page-level Plotly include (head). Avoid
+                        # embedding another Plotly bundle inside each fragment which
+                        # can lead to multiple conflicting versions in the same page.
+                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
                         container_style = "width:100%;"
-                        if specified_width_px is not None:
-                            container_style = f"width:{specified_width_px}px;"
+                        if specified_width is not None:
+                            container_style = f"width:{specified_width}px;"
                         if specified_height is not None:
                             container_style = container_style + f" height:{specified_height}px;"
                         plot_wrapped = f'<div style="{container_style}">{plotly_html}</div>'
@@ -448,7 +451,7 @@ class MiniPage(AbstractPage):
                         try:
                             if specified_height is not None:
                                 fig.update_layout(height=orig_height)
-                            if specified_width_px is not None:
+                            if specified_width is not None:
                                 fig.update_layout(width=orig_width)
                         except Exception:
                             pass
@@ -465,12 +468,12 @@ class MiniPage(AbstractPage):
                         except Exception:
                             dpi = None
                         try:
-                            if dpi is not None and (specified_height is not None or specified_width_px is not None):
+                            if dpi is not None and (specified_height is not None or specified_width is not None):
                                 orig_size = fig.get_size_inches()
                                 new_w = orig_size[0]
                                 new_h = orig_size[1]
-                                if specified_width_px is not None:
-                                    new_w = specified_width_px / dpi
+                                if specified_width is not None:
+                                    new_w = specified_width / dpi
                                 if specified_height is not None:
                                     new_h = specified_height / dpi
                                 fig.set_size_inches(new_w, new_h)
@@ -492,8 +495,8 @@ class MiniPage(AbstractPage):
                         img_style = "max-width:100%;"
                         if specified_height is not None:
                             img_style = img_style + f" height:{specified_height}px;"
-                        if specified_width_px is not None:
-                            img_style = img_style + f" width:{specified_width_px}px;"
+                        if specified_width is not None:
+                            img_style = img_style + f" width:{specified_width}px;"
                         if specified_align not in ("left", "right", "center"):
                             specified_align = "center"
                         if specified_align == "center":
