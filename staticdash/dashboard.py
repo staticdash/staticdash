@@ -12,6 +12,7 @@ import io
 import base64
 import matplotlib
 from matplotlib import rc_context
+import json
 
 def split_paragraphs_preserving_math(text):
     """
@@ -210,21 +211,43 @@ class Page(AbstractPage):
                         except Exception:
                             pass
 
-                        # If a local vendored Plotly exists, rely on the head script.
-                        # Otherwise include Plotly from CDN so the inline newPlot call works.
-                        # Always rely on the page-level Plotly include (head). Avoid
-                        # embedding another Plotly bundle inside each fragment which
-                        # can lead to multiple conflicting versions in the same page.
-                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
+                        # Defer Plotly.newPlot until the Plotly bundle is available
+                        # by embedding the figure JSON and calling newPlot from a
+                        # small loader that polls for `window.Plotly`.
+                        try:
+                            fig_json = fig.to_json()
+                        except Exception:
+                            # Fallback: use the html fragment (older path)
+                            plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
+                            container_style = "width:100%;"
+                            if specified_width is not None:
+                                container_style = f"width:{specified_width}px;"
+                            if specified_height is not None:
+                                container_style = container_style + f" height:{specified_height}px;"
+                            plot_wrapped = f'<div style="{container_style}">{plotly_html}</div>'
+                        else:
+                            fig_json = fig_json.replace('</script>', '<\\/script>')
+                            div_id = f'plot-{uuid.uuid4()}'
+                            container_style = "width:100%;"
+                            if specified_width is not None:
+                                container_style = f"width:{specified_width}px;"
+                            if specified_height is not None:
+                                container_style = container_style + f" height:{specified_height}px;"
 
-                        # Wrap the Plotly HTML in a container with explicit pixel sizing
-                        container_style = "width:100%;"
-                        if specified_width is not None:
-                            container_style = f"width:{specified_width}px;"
-                        if specified_height is not None:
-                            container_style = container_style + f" height:{specified_height}px;"
+                            plot_div = f'<div id="{div_id}" class="plotly-graph-div" style="{container_style}"></div>'
+                            loader = (
+                                '<script type="text/javascript">(function(){' \
+                                f'var fig = {fig_json};' \
+                                'function tryPlot(){' \
+                                'if(window.Plotly && typeof window.Plotly.newPlot === "function"){' \
+                                f'Plotly.newPlot("{div_id}", fig.data, fig.layout, {json.dumps({"responsive": True})});' \
+                                '} else { setTimeout(tryPlot, 50); }' \
+                                '}' \
+                                'if(document.readyState === "complete"){ tryPlot(); } else { window.addEventListener("load", tryPlot); }' \
+                                '})();</script>'
+                            )
+                            plot_wrapped = plot_div + loader
 
-                        plot_wrapped = f'<div style="{container_style}">{plotly_html}</div>'
                         # Apply alignment wrapper
                         if specified_align not in ("left", "right", "center"):
                             specified_align = "center"
@@ -427,16 +450,42 @@ class MiniPage(AbstractPage):
                         except Exception:
                             pass
 
-                        # Always rely on the page-level Plotly include (head). Avoid
-                        # embedding another Plotly bundle inside each fragment which
-                        # can lead to multiple conflicting versions in the same page.
-                        plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
-                        container_style = "width:100%;"
-                        if specified_width is not None:
-                            container_style = f"width:{specified_width}px;"
-                        if specified_height is not None:
-                            container_style = container_style + f" height:{specified_height}px;"
-                        plot_wrapped = f'<div style="{container_style}">{plotly_html}</div>'
+                        # Defer Plotly.newPlot until the Plotly bundle is available
+                        # by embedding the figure JSON and calling newPlot from a
+                        # small loader that polls for `window.Plotly`.
+                        try:
+                            fig_json = fig.to_json()
+                        except Exception:
+                            # Fallback: use the html fragment (older path)
+                            plotly_html = fig.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True})
+                            container_style = "width:100%;"
+                            if specified_width is not None:
+                                container_style = f"width:{specified_width}px;"
+                            if specified_height is not None:
+                                container_style = container_style + f" height:{specified_height}px;"
+                            plot_wrapped = f'<div style="{container_style}">{plotly_html}</div>'
+                        else:
+                            fig_json = fig_json.replace('</script>', '<\\/script>')
+                            div_id = f'plot-{uuid.uuid4()}'
+                            container_style = "width:100%;"
+                            if specified_width is not None:
+                                container_style = f"width:{specified_width}px;"
+                            if specified_height is not None:
+                                container_style = container_style + f" height:{specified_height}px;"
+
+                            plot_div = f'<div id="{div_id}" class="plotly-graph-div" style="{container_style}"></div>'
+                            loader = (
+                                '<script type="text/javascript">(function(){' \
+                                f'var fig = {fig_json};' \
+                                'function tryPlot(){' \
+                                'if(window.Plotly && typeof window.Plotly.newPlot === "function"){' \
+                                f'Plotly.newPlot("{div_id}", fig.data, fig.layout, {json.dumps({"responsive": True})});' \
+                                '} else { setTimeout(tryPlot, 50); }' \
+                                '}' \
+                                'if(document.readyState === "complete"){ tryPlot(); } else { window.addEventListener("load", tryPlot); }' \
+                                '})();</script>'
+                            )
+                            plot_wrapped = plot_div + loader
                         if specified_align not in ("left", "right", "center"):
                             specified_align = "center"
                         if specified_align == "center":
