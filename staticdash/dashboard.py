@@ -571,7 +571,7 @@ class Dashboard:
                 self._render_sidebar(self.pages, prefix=sidebar_prefix, current_slug=page.slug, 
                                    viewing_from_index=viewing_from_index)
                 with div(id="sidebar-footer"):
-                    a("Produced by staticdash", href=f"{rel_prefix}index.html" if rel_prefix else "index.html")
+                    a("Produced by staticdash", href="https://github.com/staticdash/staticdash", target="_blank", rel="noopener noreferrer")
             with div(id="content"):
                 with div(cls="content-inner"):
                     for el in page.render(
