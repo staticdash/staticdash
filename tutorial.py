@@ -33,28 +33,39 @@ dashboard.add_page(page)''',
 )
 dashboard.add_page(page_add)
 
-# --- 4. Headers & Text ---
-page_headers = Page("headers", "Headers & Text")
-page_headers.add_text(
-    "You can add headers of different levels and paragraphs of text to organize your dashboard."
-)
+# --- 4. Headers & Text with Markdown ---
+page_headers = Page("headers", "Headers & Text with Markdown")
+page_headers.add_text("""
+You can add headers of different levels and paragraphs of text to organize your dashboard.
+
+**Text supports full Markdown formatting:**
+- **Bold text** with `**text**`
+- *Italic text* with `*text*`
+- ~~Strikethrough~~ with `~~text~~`
+- `Inline code` with backticks
+
+You can also create lists:
+1. First item
+2. Second item
+3. Third item
+
+And include [links](https://github.com/staticdash/staticdash) to external resources.
+""")
+
 page_headers.add_syntax(
     '''page.add_header("Header Level 2", level=2)
 page.add_header("Header Level 3", level=3)
-page.add_header("Header Level 4", level=4)
-page.add_text("This is a paragraph of text.")''',
+page.add_text("Text with **markdown** formatting!")''',
     language="python"
 )
 page_headers.add_header("Header Level 2", level=2)
 page_headers.add_header("Header Level 3", level=3)
 page_headers.add_header("Header Level 4", level=4)
-page_headers.add_text("This is a paragraph of text. Headers help organize your dashboard and provide structure.")
 page_headers.add_text("""
-This demonstrates paragraph splitting.
+Headers help organize your dashboard and provide structure.
 
-Blank lines between text blocks create separate paragraphs automatically.
-
-Math expressions and other content are preserved during processing.
+> Blockquotes are supported too!
+> Great for highlighting important information.
 """)
 dashboard.add_page(page_headers)
 
@@ -109,21 +120,71 @@ main.add_subpage(sub2)
 dashboard.add_page(main)
 
 # --- 8. MathJax / LaTeX Math Demo ---
-page_math = Page("math", "MathJax / LaTeX Math")
-page_math.add_text(
-    "StaticDash supports LaTeX math via MathJax in HTML. For example:"
-)
-page_math.add_text(
-    r"""
-    Inline: \( x^2 + y^2 \)
+page_math = Page("math", "MathJax & Math Expressions")
+page_math.add_text("""
+StaticDash supports LaTeX math via MathJax. You can use inline math like $x^2 + y^2 = z^2$ 
+or display math:
 
-    Display:
-    \[
-    x^2 + y^2 = r^2
-    \]
-    """
-)
+$$
+E = mc^2
+$$
+
+More complex expressions work too:
+
+$$
+\\frac{\\partial f}{\\partial x} = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}
+$$
+
+Math expressions are preserved even when using markdown formatting like **bold** text.
+""")
 dashboard.add_page(page_math)
+
+# --- 9. Mermaid Diagrams ---
+page_mermaid = Page("diagrams", "Mermaid Diagrams")
+page_mermaid.add_text("""
+StaticDash supports Mermaid diagrams for visualizing workflows, architectures, and more!
+
+**Flowchart Example:**
+
+```mermaid
+graph TD
+    A[Data Collection] --> B{Data Valid?}
+    B -->|Yes| C[Process Data]
+    B -->|No| D[Log Error]
+    C --> E[Generate Dashboard]
+    D --> F[Notify Admin]
+    E --> G[Publish]
+```
+
+**Sequence Diagram:**
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant StaticDash
+    participant Browser
+    User->>StaticDash: Create dashboard
+    StaticDash->>StaticDash: Generate HTML
+    StaticDash-->>User: Output files
+    User->>Browser: Open index.html
+    Browser-->>User: Display dashboard
+```
+
+**Simple State Diagram:**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft
+    Draft --> Review: Submit
+    Review --> Approved: Accept
+    Review --> Draft: Reject
+    Approved --> Published: Publish
+    Published --> [*]
+```
+
+These diagrams render automatically and work offline!
+""")
+dashboard.add_page(page_mermaid)
 
 # --- Export ---
 dashboard.publish(output_dir="tutorial_output")

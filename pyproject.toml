@@ -17,6 +17,8 @@ dependencies = [
   "pandas",
   "dominate",
   "matplotlib",
+  "markdown",
+  "pymdown-extensions",
 ]
 
 [project.optional-dependencies]

@@ -6,13 +6,16 @@
 
 staticdash is a lightweight Python module for creating static, multi-page HTML dashboards. It supports:
 
-- Plotly plots (interactive, responsive)
-- Pandas DataFrames as sortable tables
-- Text and headers (Markdown-like)
-- File download buttons
-- Multi-page navigation with sidebar
-- Custom CSS and JavaScript
-- Easy extension for new content types
+- **Plotly plots:** Interactive, responsive visualizations
+- **Matplotlib figures:** Static plots and charts
+- **Pandas DataFrames:** Sortable, searchable tables
+- **Rich text formatting:** Full Markdown support including **bold**, *italic*, ~~strikethrough~~, lists, links, tables, and blockquotes
+- **Math expressions:** LaTeX math rendering with MathJax (inline `$...$` and display `$$...$$`)
+- **Mermaid diagrams:** Flowcharts, sequence diagrams, state diagrams, and more
+- **File downloads:** Add download buttons for any file
+- **Multi-page navigation:** Hierarchical sidebar with subpages
+- **Custom styling:** Easily customize CSS and JavaScript
+- **Air-gapped support:** All assets vendored for offline environments
 
 ## Installation
 
@@ -22,31 +25,53 @@ pip install staticdash
 
 ## Features
 
-- **Add Plotly figures:** `page.add(fig)`
-- **Add tables:** `page.add(df)` (sortable by default)
-- **Add text or headers:** `page.add("Some text")`, `page.add_header("Title", level=2)`
-- **Add download buttons:** `page.add_download("path/to/file", "Label")`
-- **Multi-page:** Create multiple `Page` objects and add them to your `Dashboard`
+### Content Types
+
+- **Add Plotly figures:** `page.add(fig)` - Interactive plots with zoom, pan, hover tooltips
+- **Add Matplotlib figures:** `page.add(fig)` - Static plots converted to PNG
+- **Add tables:** `page.add(df)` - Pandas DataFrames rendered as sortable, searchable tables
+- **Add text:** `page.add("Your text")` - Full Markdown support including:
+  - **Bold**, *italic*, ~~strikethrough~~
+  - Lists (ordered and unordered)
+  - Links, blockquotes, code blocks
+  - Tables in Markdown syntax
+- **Add headers:** `page.add_header("Title", level=2)` - Markdown headers (h1-h6)
+- **Add math:** Use `$inline math$` or `$$display math$$` for LaTeX expressions
+- **Add diagrams:** Use ` ```mermaid ` code blocks for flowcharts, sequence diagrams, state diagrams, gantt charts
+- **Add downloads:** `page.add_download("path/to/file", "Label")` - File download buttons
+
+### Layout & Styling
+
+- **Sidebar navigation:** Fixed sidebar with hierarchical pages and subpages
+- **Responsive design:** Works on desktop and mobile devices
 - **Custom styling:** Edit `assets/css/style.css` for your own look
+- **Per-page HTML:** Individual HTML files for each page plus combined dashboard
 
-## Options
+### Air-Gapped Support
 
-- **Sidebar navigation:** Fixed, with active highlighting
-- **Responsive layout:** Works on desktop and mobile
-- **Export:** Outputs a static HTML dashboard (no server needed)
-- **Per-page HTML:** Also generates individual HTML files for each page
+All external dependencies (Plotly, MathJax, Mermaid, Prism) are vendored during installation, ensuring dashboards work completely offline without internet access or CDN dependencies.
 
-## Live Demo
+## Live Demos
 
-[View the latest demo dashboard](https://staticdash.github.io/staticdash/)
+- **[Tutorial Dashboard](https://staticdash.github.io/staticdash/tutorial_output/)** - Comprehensive feature demonstration
+- **[Directory Example](https://staticdash.github.io/staticdash/directory_out/)** - Multiple dashboard aggregation
 
 ## Examples
 
-This repository includes two example dashboards that demonstrate staticdash capabilities:
+The repository includes a comprehensive tutorial demonstrating all features:
 
-- **Tutorial Dashboard:** [View tutorial_output/index.html](https://staticdash.github.io/staticdash/tutorial_output/index.html) - A comprehensive tutorial showing all staticdash features
-- **Directory Example:** [View directory_out/index.html](https://staticdash.github.io/staticdash/directory_out/index.html) - Demonstrates the Directory class for aggregating multiple dashboards
+**Tutorial Dashboard:** Run `python tutorial.py` to generate `tutorial_output/index.html`
+
+The tutorial demonstrates:
+- Basic page creation and navigation
+- Text formatting with Markdown (bold, italic, strikethrough, lists, links, tables)
+- Plotly and Matplotlib figures
+- Pandas DataFrame tables
+- Subpages and hierarchical navigation
+- MathJax math expressions (inline and display)
+- Mermaid diagrams (flowcharts, sequence diagrams, state diagrams)
+- Directory class for aggregating multiple dashboards
 
 ---
 
-For a full example, see [`demo.py`](./demo.py) in this repository.
+For the source code, see [`tutorial.py`](./tutorial.py) in this repository.

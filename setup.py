@@ -22,6 +22,7 @@ OFFLINE = os.environ.get("STATICDASH_VENDOR_OFFLINE", "0") == "1"
 VENDOR_FILES = [
     ("plotly/plotly.min.js", "https://cdn.plot.ly/plotly-2.32.0.min.js"),
     ("mathjax/tex-mml-chtml.js", "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"),
+    ("mermaid/mermaid.min.js", "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"),
     ("prism/prism-tomorrow.min.css", "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css"),
     ("prism/prism.min.js", "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"),
     ("prism/components/prism-python.min.js", "https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"),
