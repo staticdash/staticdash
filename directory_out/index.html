@@ -6,72 +6,52 @@
             <style>
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                    margin: 0;
-                    padding: 0;
-                    background-color: #f5f5f5;
+                    margin: 0; padding: 0; background-color: #f5f5f5;
                 }
                 .directory-container {
                     max-width: 900px;
-                    margin: 0 auto;
-                    padding: 40px 20px;
+                    margin: 0 auto; padding: 40px 20px;
                 }
                 .directory-header {
-                    text-align: center;
-                    margin-bottom: 50px;
+                    text-align: center; margin-bottom: 50px;
                 }
                 .directory-header h1 {
-                    font-size: 2.5em;
-                    margin-bottom: 10px;
-                    color: #333;
+                    font-size: 2.5em; margin-bottom: 10px; color: #333;
                 }
                 .directory-header p {
-                    font-size: 1.2em;
-                    color: #666;
+                    font-size: 1.2em; color: #666;
                 }
                 .dashboard-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                    gap: 30px;
-                    margin-top: 30px;
+                    gap: 30px; margin-top: 30px;
                 }
                 .dashboard-card {
-                    background: white;
-                    border-radius: 8px;
-                    padding: 30px;
+                    background: white; border-radius: 8px; padding: 30px;
                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                     transition: transform 0.2s, box-shadow 0.2s;
-                    text-decoration: none;
-                    color: inherit;
-                    display: block;
+                    text-decoration: none; color: inherit; display: block;
                 }
                 .dashboard-card:hover {
                     transform: translateY(-4px);
                     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
                 }
                 .dashboard-card h2 {
-                    margin: 0 0 10px 0;
-                    font-size: 1.5em;
-                    color: #2c3e50;
+                    margin: 0 0 10px 0; font-size: 1.5em; color: #2c3e50;
                 }
                 .dashboard-card p {
-                    margin: 0;
-                    color: #7f8c8d;
-                    font-size: 0.95em;
+                    margin: 0; color: #7f8c8d; font-size: 0.95em;
                 }
                 .dashboard-arrow {
-                    display: inline-block;
-                    margin-left: 5px;
+                    display: inline-block; margin-left: 5px;
                     transition: transform 0.2s;
                 }
                 .dashboard-card:hover .dashboard-arrow {
                     transform: translateX(5px);
                 }
                 .footer {
-                    text-align: center;
-                    margin-top: 60px;
-                    padding: 20px;
-                    color: #999;
-                    font-size: 0.9em;
+                    text-align: center; margin-top: 60px; padding: 20px;
+                    color: #999; font-size: 0.9em;
                 }
             </style>
             
@@ -83,12 +63,12 @@
         <p>Explore 2 dashboards</p>
       </div>
       <div class="dashboard-grid">
-        <a class="dashboard-card" href="tutorial/index.html">
+        <a class="dashboard-card" href="tutorial/index.html" rel="noopener noreferrer" target="_blank">
           <h2>Staticdash Tutorial</h2>
-          <p>7 pages </p>
+          <p>8 pages </p>
           <span class="dashboard-arrow">→</span>
         </a>
-        <a class="dashboard-card" href="sales/index.html">
+        <a class="dashboard-card" href="sales/index.html" rel="noopener noreferrer" target="_blank">
           <h2>Sales Analysis</h2>
           <p>1 page </p>
           <span class="dashboard-arrow">→</span>

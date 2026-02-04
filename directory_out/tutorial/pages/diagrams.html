@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Main Page</title><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mermaid Diagrams</title><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="../assets/css/style.css" rel="stylesheet">
     <script src="../assets/js/script.js" type="text/javascript"></script><script>window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]}};</script><script src="../assets/vendor/mathjax/tex-svg.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';document.head.appendChild(s);"></script>
     <link href="../assets/vendor/prism/prism-tomorrow.min.css" rel="stylesheet">
@@ -17,8 +17,8 @@
       <a class="nav-link" href="headers.html">Headers &amp; Text with Markdown</a>
       <a class="nav-link" href="plots.html">Plotly and Matplotlib Figures</a>
       <a class="nav-link" href="tables.html">Tables</a>
-      <div class="sidebar-group open">
-        <a class="nav-link sidebar-parent active" href="main.html">
+      <div class="sidebar-group">
+        <a class="nav-link sidebar-parent" href="main.html">
           <span class="sidebar-arrow"></span>Main Page
         </a>
         <div class="sidebar-children">
@@ -36,12 +36,45 @@
       <div class="content-inner">
         <div>
           <div style="max-width: 900px; margin: 0 auto; width: 100%; padding-top: 80px; padding-bottom: 80px; --content-width: 900px;">
-            <div class="floating-header" style="position: fixed; left: calc(var(--sidebar-width, 240px) + var(--content-padding-x, 20px)); width: calc(100vw - var(--sidebar-width, 240px) - 2*var(--content-padding-x, 20px)); text-align: center; background-color: #f8f9fa; padding: 10px; z-index: 1000; font-weight: normal; top: 0;">Main Page - Internal Use Only</div>
+            <div class="floating-header" style="position: fixed; left: calc(var(--sidebar-width, 240px) + var(--content-padding-x, 20px)); width: calc(100vw - var(--sidebar-width, 240px) - 2*var(--content-padding-x, 20px)); text-align: center; background-color: #f8f9fa; padding: 10px; z-index: 1000; font-weight: normal; top: 0;">Confidential - For Internal Use Only</div>
             <div class="floating-footer" style="position: fixed; left: calc(var(--sidebar-width, 240px) + var(--content-padding-x, 20px)); width: calc(100vw - var(--sidebar-width, 240px) - 2*var(--content-padding-x, 20px)); text-align: center; background-color: #f8f9fa; padding: 10px; z-index: 1000; font-weight: normal; bottom: 0;">
               <div style="margin-bottom: 4px; font-size: 10pt;">DISTRIBUTION STATEMENT A. Approved for public release.</div>
-              <div>Main Page - Internal Use Only</div>
+              <div>Confidential - For Internal Use Only</div>
             </div>
-            <div><p>This is the main page.</p></div>
+            <div><p>StaticDash supports Mermaid diagrams for visualizing workflows, architectures, and more!</p>
+<p><strong>Flowchart Example:</strong></p>
+<div class="mermaid">
+graph TD
+    A[Data Collection] --> B{Data Valid?}
+    B -->|Yes| C[Process Data]
+    B -->|No| D[Log Error]
+    C --> E[Generate Dashboard]
+    D --> F[Notify Admin]
+    E --> G[Publish]
+</div>
+<p><strong>Sequence Diagram:</strong></p>
+<div class="mermaid">
+sequenceDiagram
+    participant User
+    participant StaticDash
+    participant Browser
+    User->>StaticDash: Create dashboard
+    StaticDash->>StaticDash: Generate HTML
+    StaticDash-->>User: Output files
+    User->>Browser: Open index.html
+    Browser-->>User: Display dashboard
+</div>
+<p><strong>Simple State Diagram:</strong></p>
+<div class="mermaid">
+stateDiagram-v2
+    [*] --> Draft
+    Draft --> Review: Submit
+    Review --> Approved: Accept
+    Review --> Draft: Reject
+    Approved --> Published: Publish
+    Published --> [*]
+</div>
+<p>These diagrams render automatically and work offline!</p></div>
           </div>
         </div>
       </div>
