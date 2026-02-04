@@ -6,7 +6,7 @@ from typing import Optional, Tuple, List, Any
 import pandas as pd
 import plotly.graph_objects as go
 from dominate import document
-from dominate.tags import div, h1, h2, h3, h4, p, a, script, link, span
+from dominate.tags import div, h1, h2, h3, h4, p, a, script, link, span, ul, li
 from dominate.util import raw as raw_util
 import html
 import io
@@ -656,52 +656,54 @@ class Directory:
             <style>
                 body {{
                     font-family: {DEFAULT_FONT_FAMILY};
-                    margin: 0; padding: 0; background-color: #f5f5f5;
+                    margin: 0; padding: 60px 40px;
+                    background-color: #2c3e50;
+                    min-height: 100vh;
                 }}
                 .directory-container {{
                     max-width: {self.page_width}px;
-                    margin: 0 auto; padding: 40px 20px;
+                    margin: 0 auto;
+                    background: white;
+                    padding: 50px;
+                    border-radius: 8px;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
                 }}
                 .directory-header {{
-                    text-align: center; margin-bottom: 50px;
+                    margin-bottom: 40px;
+                    border-bottom: 3px solid #16a085;
+                    padding-bottom: 20px;
                 }}
                 .directory-header h1 {{
-                    font-size: 2.5em; margin-bottom: 10px; color: #333;
+                    font-size: 2.5em;
+                    margin: 0;
+                    color: #2c3e50;
+                    font-weight: 600;
                 }}
-                .directory-header p {{
-                    font-size: 1.2em; color: #666;
+                .dashboard-list {{
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
                 }}
-                .dashboard-grid {{
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-                    gap: 30px; margin-top: 30px;
+                .dashboard-list li {{
+                    margin: 0;
+                    border-bottom: 1px solid #ecf0f1;
                 }}
-                .dashboard-card {{
-                    background: white; border-radius: 8px; padding: 30px;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                    transition: transform 0.2s, box-shadow 0.2s;
-                    text-decoration: none; color: inherit; display: block;
+                .dashboard-list li:last-child {{
+                    border-bottom: none;
                 }}
-                .dashboard-card:hover {{
-                    transform: translateY(-4px);
-                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+                .dashboard-list a {{
+                    display: block;
+                    padding: 20px 10px;
+                    font-weight: 600;
+                    font-size: 1.2em;
+                    color: #34495e;
+                    text-decoration: none;
+                    transition: all 0.2s ease;
                 }}
-                .dashboard-card h2 {{
-                    margin: 0 0 10px 0; font-size: 1.5em; color: #2c3e50;
-                }}
-                .dashboard-card p {{
-                    margin: 0; color: #7f8c8d; font-size: 0.95em;
-                }}
-                .dashboard-arrow {{
-                    display: inline-block; margin-left: 5px;
-                    transition: transform 0.2s;
-                }}
-                .dashboard-card:hover .dashboard-arrow {{
-                    transform: translateX(5px);
-                }}
-                .footer {{
-                    text-align: center; margin-top: 60px; padding: 20px;
-                    color: #999; font-size: 0.9em;
+                .dashboard-list a:hover {{
+                    color: #16a085;
+                    padding-left: 20px;
+                    background: #f9f9f9;
                 }}
             </style>
             """)
@@ -710,20 +712,11 @@ class Directory:
             with div(cls="directory-container"):
                 with div(cls="directory-header"):
                     h1(self.title)
-                    plural = 's' if len(self.dashboards) != 1 else ''
-                    p(f"Explore {len(self.dashboards)} dashboard{plural}")
                 
-                with div(cls="dashboard-grid"):
+                with ul(cls="dashboard-list"):
                     for slug, dashboard in self.dashboards:
-                        with a(href=f"{slug}/index.html", cls="dashboard-card", target="_blank", rel="noopener noreferrer"):
-                            h2(dashboard.title)
-                            num_pages = len(dashboard.pages)
-                            plural = 's' if num_pages != 1 else ''
-                            p(f"{num_pages} page{plural} ")
-                            span("→", cls="dashboard-arrow")
-                
-                with div(cls="footer"):
-                    p("Produced by staticdash")
+                        with li():
+                            a(dashboard.title, href=f"{slug}/index.html", target="_blank", rel="noopener noreferrer")
         
         with open(os.path.join(output_dir, "index.html"), "w", encoding="utf-8") as f:
             f.write(str(doc))
